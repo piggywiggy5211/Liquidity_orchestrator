@@ -2,8 +2,9 @@ import pytest
 import json
 import httpx
 from fastapi.testclient import TestClient
-from main import main_app
-from app.core.logger.logger import mask_iban, serialize_json_log
+from app.main import main_app
+from app.core.logger.sanitizer import mask_iban
+from app.core.logger.loguru_logger import serialize_json_log
 from app.services.liquidity import LiquidityService
 from app.schemas.orders import OrderCreate, QuoteRequest
 from unittest.mock import AsyncMock, MagicMock
@@ -20,12 +21,26 @@ def test_mask_iban():
     assert masked.endswith("7890")
     assert "*" in masked
 
+def test_log_sanitizer_multiple_rules():
+    from app.core.logger.sanitizer import LogSanitizer
+    s = LogSanitizer()
+    # Add a dummy rule
+    s.add_sanitizer(lambda x: x.replace("SECRET", "******"))
+    
+    text = "IBAN: DE12345678901234567890 and SECRET value"
+    sanitized = s.sanitize(text)
+    
+    assert "DE12****7890" in sanitized
+    assert "******" in sanitized
+    assert "SECRET" not in sanitized
+
 def test_json_logging_format():
     record = {
         "time": MagicMock(),
         "level": MagicMock(name="INFO"),
         "message": "test message with IBAN DE12345678901234567890",
-        "extra": {}
+        "extra": {},
+        "exception": None
     }
     record["time"].strftime.return_value = "2026-02-10T14:30:15.123Z"
     record["level"].name = "INFO"
@@ -112,7 +127,7 @@ async def test_httpx_logging_transport(capsys):
 
 def test_http_client_in_lifespan():
     # Ensure httpx client is created globally in lifespan
-    with TestClient(app) as c:
+    with TestClient(main_app) as c:
         assert hasattr(c.app.state, "http_client")
         import httpx as _httpx
         assert isinstance(c.app.state.http_client, _httpx.AsyncClient)

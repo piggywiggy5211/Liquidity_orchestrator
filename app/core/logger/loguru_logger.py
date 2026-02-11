@@ -8,19 +8,11 @@ from loguru._better_exceptions import ExceptionFormatter
 from opentelemetry import trace
 
 from app.core.config import settings
+from app.core.logger.sanitizer import log_sanitizer
 
 if TYPE_CHECKING:
     from loguru import Record
 
-IBAN_REGEX = re.compile(r'\b[A-Z]{2}\d{2}[A-Z0-9]{11,27}\b')  # iban length  range 15 - 31
-
-
-def mask_iban(text: str) -> str:
-    def replace(match):
-        iban = match.group(0)
-        return f"{iban[:4]}****{iban[-4:]}"
-
-    return IBAN_REGEX.sub(replace, text)
 
 
 exception_formatter = ExceptionFormatter(
@@ -40,18 +32,13 @@ def serialize_json_log(record: "Record") -> str:
 
     trace_id = format(span_context.trace_id, "032x") if span_context.is_valid else "0" * 32
     span_id = format(span_context.span_id, "016x") if span_context.is_valid else "0" * 16
-
-    message = record["message"]
-    # Apply sanitizer
-    message = mask_iban(message)
-
     log_record = {
         "timestamp": record["time"].strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         "level": record["level"].name,
         "service": "liquidity-orchestrator",
         "trace_id": trace_id,
         "span_id": span_id,
-        "message": message,
+        "message": record["message"],
     }
     if record["exception"]:
         type_, value, tb = record["exception"]
@@ -62,8 +49,9 @@ def serialize_json_log(record: "Record") -> str:
     if record["extra"]:
         log_record.update(record["extra"])
 
-    # return json.dumps(log_record, default=str) + "\n"
-    return json.dumps(log_record, default=str, ensure_ascii=False) + "\n"
+    dirty_log = json.dumps(log_record, default=str, ensure_ascii=False)
+    clear_log = log_sanitizer.sanitize(dirty_log)
+    return f"{clear_log}\n"
 
 
 def setup_loguru_logger():
