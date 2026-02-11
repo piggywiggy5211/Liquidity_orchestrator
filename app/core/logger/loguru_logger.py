@@ -38,7 +38,6 @@ def serialize_json_log(record: "Record") -> str:
         lines = exception_formatter.format_exception(type_, value, tb)  # type: ignore
         log_record.update({"exception": "".join(lines)})
 
-    # Add extra data if any
     if record["extra"]:
         log_record.update(record["extra"])
 

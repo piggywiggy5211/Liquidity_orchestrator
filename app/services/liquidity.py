@@ -1,3 +1,4 @@
+
 import httpx
 from app.schemas.orders import OrderCreate, OrderResponse, QuoteRequest, QuoteResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +11,8 @@ class LiquidityService:
 
     async def create_order(self, order_in: OrderCreate) -> OrderResponse:
         logger.info(f"Creating order for amount {order_in.amount}")
+
+        response = await self.http_client.get("https://pokeapi.co/api/v2/pokemon/ditto")
         # Stub logic
         return OrderResponse(id="ord_12345", status="pending")
 

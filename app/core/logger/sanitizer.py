@@ -1,5 +1,6 @@
 import re
-from typing import List, Callable
+from typing import List, Callable, Dict, Any, Mapping
+
 
 # IBAN regex: starts with 2 letters, 2 digits, then 11-27 alphanumeric characters
 IBAN_REGEX = re.compile(r'\b[A-Z]{2}\d{2}[A-Z0-9]{11,27}\b')
@@ -12,6 +13,13 @@ def mask_iban(text: str) -> str:
         return f"{iban[:4]}****{iban[-4:]}"
 
     return IBAN_REGEX.sub(replace, text)
+
+
+def sanitize_headers(headers: Mapping[str, str] | Any) -> Dict[str, str]:
+    """Removes sensitive headers like Authorization."""
+    if hasattr(headers, "items"):
+        return {k: v for k, v in headers.items() if k.lower() != "authorization"}
+    return dict(headers)
 
 
 class LogSanitizer:

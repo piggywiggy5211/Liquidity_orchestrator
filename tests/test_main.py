@@ -34,6 +34,19 @@ def test_log_sanitizer_multiple_rules():
     assert "******" in sanitized
     assert "SECRET" not in sanitized
 
+def test_sanitize_headers():
+    from app.core.logger.sanitizer import sanitize_headers
+    headers = {
+        "Authorization": "Bearer token123",
+        "Content-Type": "application/json",
+        "authorization": "Secret"
+    }
+    sanitized = sanitize_headers(headers)
+    assert "Authorization" not in sanitized
+    assert "authorization" not in sanitized
+    assert sanitized["Content-Type"] == "application/json"
+    assert len(sanitized) == 1
+
 def test_json_logging_format():
     record = {
         "time": MagicMock(),
@@ -122,7 +135,7 @@ async def test_httpx_logging_transport(capsys):
 
     out = capsys.readouterr().out
     # Logs are JSON lines; ensure our transport messages are present and header Authorization is removed
-    assert "HTTP POST" in out
+    assert "HTTPX CLIENT REQUEST POST URL: https://" in out
     lower_out = out.lower()
     assert "authorization" not in lower_out
     assert "x-test" in lower_out

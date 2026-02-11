@@ -1,53 +1,83 @@
 import httpx
 from loguru import logger
 
+from app.core.logger.sanitizer import sanitize_headers
+
 
 class LoggingTransport(httpx.AsyncBaseTransport):
     def __init__(self, transport: httpx.AsyncBaseTransport):
         self._transport = transport
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-        url = str(request.url)
-        # sanitize headers for logging only (case-insensitive removal of Authorization)
-        headers = {k: v for k, v in request.headers.items() if k.lower() != "authorization"}
-
-        # avoid consuming request stream; use content if readily available
-        body_bytes = request.content if request.content is not None else b""
-        body_data = body_bytes.decode(errors="replace")
-
-        # log_message format as requested
-        request_name = request.method
-        log_message = (
-            f"HTTP {request_name}"
-            f"\n URL: {url}"
-            f"\n HEADERS: {headers}"
-            f"\n BODY RAW: {body_data}"
-        )
-        logger.info(log_message)
-
+        await self._log_request(request)
         try:
             response = await self._transport.handle_async_request(request)
-
-            response_body = await response.aread()
-            response_body_decoded = response_body.decode(errors="replace")
-
-            log_message_resp = (
-                f"HTTP RESPONSE {response.status_code}"
-                f"\n URL: {url}"
-                f"\n HEADERS: {dict(response.headers)}"
-                f"\n BODY RAW: {response_body_decoded}"
-            )
-            logger.info(log_message_resp)
+            await self._log_response(request, response)
             return response
-        except httpx.TimeoutException as exc:
-            logger.error(f"HTTP {request_name} TIMEOUT\n URL: {url}\n ERROR: {str(exc)}")
-            raise
-        except httpx.ConnectError as exc:
-            logger.error(f"HTTP {request_name} CONNECTION ERROR\n URL: {url}\n ERROR: {str(exc)}")
-            raise
         except Exception as exc:
-            logger.error(f"HTTP {request_name} ERROR\n URL: {url}\n ERROR: {str(exc)}")
+            self._log_error(request, exc)
             raise
+
+    @staticmethod
+    async def _log_request(request: httpx.Request):
+        url = str(request.url)
+        headers = sanitize_headers(request.headers)
+        query_params = dict(request.url.params)
+        body_bytes = request.content if request.content is not None else b""
+        body_data_decoded = body_bytes.decode(errors="replace")
+        method = request.method
+
+        log_message = (
+            f"HTTPX CLIENT REQUEST"
+            f" {method}"
+            f" URL: {url}"
+        )
+        logger.bind(
+            request_details={
+                "method": method,
+                "url": url,
+                "headers": headers,
+                "query_params": query_params,
+                "body_raw": body_data_decoded,
+            },
+        ).info(log_message)
+
+    @staticmethod
+    async def _log_response(request: httpx.Request, response: httpx.Response):
+        url = str(request.url)
+        status_code = response.status_code
+        headers = sanitize_headers(response.headers)
+        body_bytes = await response.aread()
+        body_data_decoded = body_bytes.decode(errors="replace")
+        method = request.method
+
+        log_message = (
+            f"HTTPX CLIENT RESPONSE"
+            f" {method}"
+            f" STATUS_CODE: {status_code}"
+            f" URL: {url}"
+        )
+
+        logger.bind(
+            response_details={
+                "status_code": status_code,
+                "url": url,
+                "headers": headers,
+                "body_raw": body_data_decoded,
+            },
+        ).info(log_message)
+
+    @staticmethod
+    def _log_error(request: httpx.Request, exc: Exception):
+        url = str(request.url)
+        request_name = request.method
+        match exc:
+            case httpx.TimeoutException():
+                logger.error(f"HTTP {request_name} TIMEOUT\n URL: {url}\n ERROR: {str(exc)}")
+            case httpx.ConnectError():
+                logger.error(f"HTTP {request_name} CONNECTION ERROR\n URL: {url}\n ERROR: {str(exc)}")
+            case _:
+                logger.error(f"HTTP {request_name} ERROR\n URL: {url}\n ERROR: {str(exc)}")
 
 
 def create_http_client() -> httpx.AsyncClient:

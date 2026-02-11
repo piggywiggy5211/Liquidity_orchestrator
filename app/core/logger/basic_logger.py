@@ -25,3 +25,5 @@ class InterceptHandler(logging.Handler):
 
 def setup_basic_logging():
     logging.basicConfig(handlers=[InterceptHandler()], level=settings.logging.log_level_value, force=True)
+    # Disable httpx logs to reduce noise
+    logging.getLogger("httpx").setLevel(logging.CRITICAL)
