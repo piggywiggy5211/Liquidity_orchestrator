@@ -26,10 +26,13 @@ def serialize_json_log(record: "Record") -> str:
         "timestamp": record["time"].strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         "level": record["level"].name,
         "service": "liquidity-orchestrator",
-        "trace_id": record["extra"].get("trace_id", None),
-        "span_id": record["extra"].get("span_id", None),
         "message": record["message"],
     }
+    trace_id = record["extra"].pop("trace_id", None)
+    span_id = record["extra"].pop("span_id", None)
+    if trace_id or span_id:
+        log_record.update({"trace_id": trace_id, "span_id": span_id})
+
     if record["exception"]:
         type_, value, tb = record["exception"]
         lines = exception_formatter.format_exception(type_, value, tb)  # type: ignore

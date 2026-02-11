@@ -43,6 +43,6 @@ if __name__ == "__main__":
         main_app,
         host=settings.run.host,
         port=settings.run.port,
-        log_level=settings.logging.log_level_value,
+        log_level=settings.logging.log_level_value.lower(),
         log_config=None,
     )

@@ -39,7 +39,10 @@ def test_json_logging_format():
         "time": MagicMock(),
         "level": MagicMock(name="INFO"),
         "message": "test message with IBAN DE12345678901234567890",
-        "extra": {},
+        "extra": {
+            "trace_id": "1234567890",
+            "span_id": "0987654321"
+        },
         "exception": None
     }
     record["time"].strftime.return_value = "2026-02-10T14:30:15.123Z"
