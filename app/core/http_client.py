@@ -50,7 +50,7 @@ class LoggingTransport(httpx.AsyncBaseTransport):
             raise
 
 
-def get_http_client() -> httpx.AsyncClient:
+def create_http_client() -> httpx.AsyncClient:
     base_transport = httpx.AsyncHTTPTransport(retries=1)
     logging_transport = LoggingTransport(base_transport)
     return httpx.AsyncClient(transport=logging_transport)
