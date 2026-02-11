@@ -1,19 +1,15 @@
 import json
-import re
 import sys
 from typing import TYPE_CHECKING
 
 from loguru import logger
 from loguru._better_exceptions import ExceptionFormatter
-from opentelemetry import trace
 
 from app.core.config import settings
 from app.core.logger.sanitizer import log_sanitizer
 
 if TYPE_CHECKING:
     from loguru import Record
-
-
 
 exception_formatter = ExceptionFormatter(
     colorize=False,
@@ -26,18 +22,12 @@ exception_formatter = ExceptionFormatter(
 
 
 def serialize_json_log(record: "Record") -> str:
-    # Get trace context
-    span = trace.get_current_span()
-    span_context = span.get_span_context()
-
-    trace_id = format(span_context.trace_id, "032x") if span_context.is_valid else "0" * 32
-    span_id = format(span_context.span_id, "016x") if span_context.is_valid else "0" * 16
     log_record = {
         "timestamp": record["time"].strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         "level": record["level"].name,
         "service": "liquidity-orchestrator",
-        "trace_id": trace_id,
-        "span_id": span_id,
+        "trace_id": record["extra"].get("trace_id", None),
+        "span_id": record["extra"].get("span_id", None),
         "message": record["message"],
     }
     if record["exception"]:

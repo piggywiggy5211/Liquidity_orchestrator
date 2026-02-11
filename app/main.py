@@ -1,15 +1,17 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
 
+from fastapi import FastAPI
 
 from app.api.router import router
 from app.core.config import settings
 from app.core.database import db_helper
-from app.core.logger.logger import setup_logger
 from app.core.http_client import create_http_client
+from app.core.logger.logger import setup_logger
+from app.core.middleware.logger_context import LoggerContextMiddleware
 from app.core.tracer import init_tracer
 
 setup_logger()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,23 +23,22 @@ async def lifespan(app: FastAPI):
         await db_helper.dispose()
 
 
-
-
 def create_app() -> FastAPI:
     app = FastAPI(lifespan=lifespan)
     # middlewares
-    # app.add_middleware(ExceptionHandlerMiddleware)
+    app.add_middleware(LoggerContextMiddleware)
 
     init_tracer(app)
-
     # routers
-    main_app.include_router(router)
+    app.include_router(router)
     return app
+
 
 main_app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         main_app,
         host=settings.run.host,
