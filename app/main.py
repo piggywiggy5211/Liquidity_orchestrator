@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api.router import router
 from app.core.config import settings
 from app.core.database import db_helper
 from app.core.http_client import create_http_client
@@ -10,6 +9,7 @@ from app.core.logger.logger import setup_logger
 from app.core.middleware.logger_context import LoggerContextMiddleware
 from app.core.middleware.logging_request_response import RequestResponseLoggingMiddleware
 from app.core.tracer import init_tracer
+from app.router import api_router
 
 setup_logger()
 
@@ -32,7 +32,7 @@ def create_app() -> FastAPI:
 
     init_tracer(app)
     # routers
-    app.include_router(router)
+    app.include_router(api_router)
     return app
 
 

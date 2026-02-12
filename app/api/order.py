@@ -1,0 +1,17 @@
+from typing import Annotated
+
+from fastapi import APIRouter, Depends
+
+from app.api.deps import get_liquidity_service
+from app.schemas.orders import OrderCreate, OrderResponse, QuoteRequest, QuoteResponse
+from app.services.liquidity import LiquidityService
+
+router = APIRouter()
+
+
+@router.post("/create_order", response_model=OrderResponse)
+async def create_order(
+        order_in: OrderCreate,
+        service: Annotated[LiquidityService, Depends(get_liquidity_service)],
+):
+    return await service.create_order(order_in)
