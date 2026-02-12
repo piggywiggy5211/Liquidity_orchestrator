@@ -4,7 +4,7 @@ import httpx
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import db_helper
+from app.database.db_helper import db_helper
 from app.services.liquidity import LiquidityService
 
 

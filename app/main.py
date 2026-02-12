@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.core.config import settings
-from app.core.database import db_helper
+from app.database.db_helper import db_helper
 from app.core.http_client import create_http_client
 from app.core.logger.logger import setup_logger
 from app.core.middleware.logger_context import LoggerContextMiddleware
