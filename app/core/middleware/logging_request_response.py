@@ -6,7 +6,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
-from app.core.logger.sanitizer import sanitize_headers
+from app.core.sanitizers.http_saitazer import sanitize_headers
 
 
 class RequestResponseLoggingMiddleware(BaseHTTPMiddleware):

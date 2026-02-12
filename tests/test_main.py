@@ -3,11 +3,14 @@ import json
 import httpx
 from fastapi.testclient import TestClient
 from app.main import main_app
-from app.core.logger.sanitizer import mask_iban
+from app.core.sanitizers.log_sanitizer import mask_iban, LogSanitizer
+from app.core.sanitizers.http_saitazer import sanitize_headers
 from app.core.logger.loguru_logger import serialize_json_log
 from app.services.liquidity import LiquidityService
 from app.schemas.orders import OrderCreate, QuoteRequest
 from unittest.mock import AsyncMock, MagicMock
+from app.core.http_client import LoggingTransport
+
 
 @pytest.fixture
 def client():
@@ -22,7 +25,6 @@ def test_mask_iban():
     assert "*" in masked
 
 def test_log_sanitizer_multiple_rules():
-    from app.core.logger.sanitizer import LogSanitizer
     s = LogSanitizer()
     # Add a dummy rule
     s.add_sanitizer(lambda x: x.replace("SECRET", "******"))
@@ -35,7 +37,6 @@ def test_log_sanitizer_multiple_rules():
     assert "SECRET" not in sanitized
 
 def test_sanitize_headers():
-    from app.core.logger.sanitizer import sanitize_headers
     headers = {
         "Authorization": "Bearer token123",
         "Content-Type": "application/json",
@@ -108,8 +109,6 @@ async def test_liquidity_service():
 
 @pytest.mark.asyncio
 async def test_httpx_logging_transport(capsys):
-    from app.core.http_client import LoggingTransport
-
     class DummyTransport(httpx.AsyncBaseTransport):
         async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
             return httpx.Response(

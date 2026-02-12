@@ -6,7 +6,7 @@ from loguru import logger
 from loguru._better_exceptions import ExceptionFormatter
 
 from app.core.config import settings
-from app.core.logger.sanitizer import log_sanitizer
+from app.core.sanitizers.log_sanitizer import log_sanitizer
 
 if TYPE_CHECKING:
     from loguru import Record

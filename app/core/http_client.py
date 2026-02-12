@@ -1,7 +1,7 @@
 import httpx
 from loguru import logger
 
-from app.core.logger.sanitizer import sanitize_headers
+from app.core.sanitizers.http_saitazer import sanitize_headers
 
 
 class LoggingTransport(httpx.AsyncBaseTransport):
