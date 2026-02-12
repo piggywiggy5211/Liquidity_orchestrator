@@ -5,6 +5,7 @@ description = "Example of liquidity Orchestrator for Onramp/Offramp (multi-provi
 requires-python = ">=3.14"
 dependencies = [
     "aiosqlite>=0.22.1",
+    "alembic>=1.18.4",
     "fastapi>=0.128.6",
     "httpx>=0.28.1",
     "loguru>=0.7.3",

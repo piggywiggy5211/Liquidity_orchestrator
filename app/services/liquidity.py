@@ -1,17 +1,24 @@
 
 import httpx
-from app.schemas.orders import OrderCreate, OrderResponse, QuoteRequest, QuoteResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
+from app.schemas.orders import OrderCreate, OrderResponse, QuoteRequest, QuoteResponse
+from app.services.interfaces import IUnitOfWork
+
+
 class LiquidityService:
-    def __init__(self, db: AsyncSession, http_client: httpx.AsyncClient):
-        self.db = db
+    def __init__(self, uow: IUnitOfWork, http_client: httpx.AsyncClient):
+        self.uow = uow
         self.http_client = http_client
 
     async def create_order(self, order_in: OrderCreate) -> OrderResponse:
         logger.info(f"Creating order for amount {order_in.amount}")
-        response = await self.http_client.get("https://pokeapi.co/api/v2/pokemon/ditto")
+        async with self.uow:
+            # Здесь будет логика создания заказа через репозитории
+            # order = await self.uow.orders.create(...)
+            # await self.uow.commit()
+            response = await self.http_client.get("https://pokeapi.co/api/v2/pokemon/ditto")
+        
         return OrderResponse(id="ord_12345", status="pending")
 
     async def get_quote(self, quote_in: QuoteRequest) -> QuoteResponse:
