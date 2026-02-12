@@ -9,7 +9,7 @@ from app.core.logger.loguru_logger import serialize_json_log
 from app.services.liquidity import LiquidityService
 from app.schemas.orders import OrderCreate, QuoteRequest
 from unittest.mock import AsyncMock, MagicMock
-from app.core.http_client import LoggingTransport
+from app.core.http_client import LoggingAsyncClient
 
 
 @pytest.fixture
@@ -119,25 +119,36 @@ async def test_httpx_logging_transport(capsys):
             )
 
     inner = DummyTransport()
-    transport = LoggingTransport(inner)
-
-    request = httpx.Request(
-        "POST",
-        "https://api.example.com/test",
-        headers={"Authorization": "Bearer token", "X-Test": "val"},
-        content=b"some body",
-    )
-
-    resp = await transport.handle_async_request(request)
+    async with LoggingAsyncClient(transport=inner) as client:
+        resp = await client.post(
+            "https://api.example.com/test",
+            headers={"Authorization": "Bearer token", "X-Test": "val"},
+            content=b"some body",
+        )
 
     assert resp.status_code == 200
 
     out = capsys.readouterr().out
-    # Logs are JSON lines; ensure our transport messages are present and header Authorization is removed
     assert "HTTPX CLIENT REQUEST POST URL: https://" in out
     lower_out = out.lower()
     assert "authorization" not in lower_out
     assert "x-test" in lower_out
+
+
+@pytest.mark.asyncio
+async def test_httpx_error_logging(capsys):
+    class ErrorTransport(httpx.AsyncBaseTransport):
+        async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+            raise httpx.ConnectError("Connection refused")
+
+    inner = ErrorTransport()
+    async with LoggingAsyncClient(transport=inner) as client:
+        with pytest.raises(httpx.ConnectError):
+            await client.get("https://api.example.com/test")
+
+    out = capsys.readouterr().out
+    assert "HTTP GET CONNECTION ERROR" in out
+    assert "Connection refused" in out
 
 
 def test_http_client_in_lifespan():

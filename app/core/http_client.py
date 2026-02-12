@@ -4,68 +4,76 @@ from loguru import logger
 from app.core.sanitizers.http_saitazer import sanitize_headers
 
 
-class LoggingTransport(httpx.AsyncBaseTransport):
-    def __init__(self, transport: httpx.AsyncBaseTransport):
-        self._transport = transport
+async def log_request(request: httpx.Request):
+    url = str(request.url)
+    headers = sanitize_headers(request.headers)
+    query_params = dict(request.url.params)
+    body_bytes = request.content if request.content is not None else b""
+    body_data_decoded = body_bytes.decode(errors="replace")
+    method = request.method
 
-    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-        await self._log_request(request)
+    log_message = (
+        f"HTTPX CLIENT REQUEST"
+        f" {method}"
+        f" URL: {url}"
+    )
+    logger.bind(
+        request_details={
+            "method": method,
+            "url": url,
+            "headers": headers,
+            "query_params": query_params,
+            "body_raw": body_data_decoded,
+        },
+    ).info(log_message)
+
+
+async def log_response(response: httpx.Response):
+    request = response.request
+    url = str(request.url)
+    status_code = response.status_code
+    headers = sanitize_headers(response.headers)
+    body_bytes = await response.aread()
+    body_data_decoded = body_bytes.decode(errors="replace")
+    method = request.method
+
+    log_message = (
+        f"HTTPX CLIENT RESPONSE"
+        f" {method}"
+        f" STATUS_CODE: {status_code}"
+        f" URL: {url}"
+    )
+
+    logger.bind(
+        response_details={
+            "status_code": status_code,
+            "url": url,
+            "headers": headers,
+            "body_raw": body_data_decoded,
+        },
+    ).info(log_message)
+
+
+class LoggingAsyncClient(httpx.AsyncClient):
+    def __init__(self, *args, **kwargs):
+        event_hooks = kwargs.pop("event_hooks", {})
+
+        if "response" not in event_hooks:
+            event_hooks["response"] = list()
+        if "request" not in event_hooks:
+            event_hooks["request"] = list()
+
+        event_hooks["response"].append(log_response)
+        event_hooks["request"].append(log_request)
+
+        super().__init__(*args, event_hooks=event_hooks, **kwargs)
+
+    async def send(self, request: httpx.Request, **kwargs) -> httpx.Response:
         try:
-            response = await self._transport.handle_async_request(request)
-            await self._log_response(request, response)
-            return response
+            return await super().send(request, **kwargs)
         except Exception as exc:
             self._log_error(request, exc)
             raise
-
-    @staticmethod
-    async def _log_request(request: httpx.Request):
-        url = str(request.url)
-        headers = sanitize_headers(request.headers)
-        query_params = dict(request.url.params)
-        body_bytes = request.content if request.content is not None else b""
-        body_data_decoded = body_bytes.decode(errors="replace")
-        method = request.method
-
-        log_message = (
-            f"HTTPX CLIENT REQUEST"
-            f" {method}"
-            f" URL: {url}"
-        )
-        logger.bind(
-            request_details={
-                "method": method,
-                "url": url,
-                "headers": headers,
-                "query_params": query_params,
-                "body_raw": body_data_decoded,
-            },
-        ).info(log_message)
-
-    @staticmethod
-    async def _log_response(request: httpx.Request, response: httpx.Response):
-        url = str(request.url)
-        status_code = response.status_code
-        headers = sanitize_headers(response.headers)
-        body_bytes = await response.aread()
-        body_data_decoded = body_bytes.decode(errors="replace")
-        method = request.method
-
-        log_message = (
-            f"HTTPX CLIENT RESPONSE"
-            f" {method}"
-            f" STATUS_CODE: {status_code}"
-            f" URL: {url}"
-        )
-
-        logger.bind(
-            response_details={
-                "status_code": status_code,
-                "url": url,
-                "headers": headers,
-                "body_raw": body_data_decoded,
-            },
-        ).info(log_message)
 
     @staticmethod
     def _log_error(request: httpx.Request, exc: Exception):
@@ -81,6 +89,4 @@ class LoggingTransport(httpx.AsyncBaseTransport):
 
 
 def create_http_client() -> httpx.AsyncClient:
-    base_transport = httpx.AsyncHTTPTransport(retries=1)
-    logging_transport = LoggingTransport(base_transport)
-    return httpx.AsyncClient(transport=logging_transport)
+    return LoggingAsyncClient()
