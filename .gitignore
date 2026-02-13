@@ -1,4 +1,6 @@
 .venv/
 .idea/
 .ai/
+test.db
+.output.txt
 
