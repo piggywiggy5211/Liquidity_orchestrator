@@ -1,28 +1,9 @@
-from decimal import Decimal
-from typing import Optional, Any
-from .base import BaseProvider, OrderExecutionRequest, ExecutionStatus
-from app.service.enums import QuoteDirection
+from .base import BaseProvider
 
 class ProviderB(BaseProvider):
-    async def get_quote(
-        self, 
-        direction: QuoteDirection, 
-        pair: str, 
-        amount_in: Optional[Decimal] = None, 
-        amount_out: Optional[Decimal] = None
-    ) -> Any:
-        # Stub implementation for ProviderB
-        return {
-            "provider": "ProviderB",
-            "pair": pair,
-            "direction": direction,
-            "amount_in": amount_in,
-            "amount_out": amount_out
-        }
-
-    async def execute(self, order: OrderExecutionRequest) -> dict:
-        # Stub implementation for ProviderB
-        return {
-            "status": ExecutionStatus.SUCCESS,
-            "provider_ref": "ref-b-456"
-        }
+    fee_min = 0.005
+    fee_max = 0.01
+    latency_min = 10
+    latency_max = 30
+    timeout_prob = 0.002
+    ref_prefix = "b"

@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     logging: LoggingConfig = LoggingConfig()
     run: RunConfig = RunConfig()
     service_fee: Decimal = Decimal("0.02")
+    quote_ttl: int = 60
 
     model_config = SettingsConfigDict(
         env_file=(".env",),
