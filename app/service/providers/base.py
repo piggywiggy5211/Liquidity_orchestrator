@@ -49,6 +49,13 @@ class BaseProvider(ABC):
     fail_prob: float = 0.00003
     ref_prefix: str
 
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self):
         self._cache = TTLCache(maxsize=1024, ttl=settings.quote_ttl)
 

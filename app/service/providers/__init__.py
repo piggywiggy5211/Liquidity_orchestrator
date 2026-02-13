@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING
 from .base import IProvider, BaseProvider, ExecutionStatus, OrderExecutionRequest
 
 if TYPE_CHECKING:
-    PROVIDERS: list[type[IProvider]]
+    PROVIDERS_LIST: list[type[IProvider]]
+    PROVIDERS_MAP: dict[str, type[IProvider]]
 
 def discover_providers():
     """Dynamically imports all modules in the current package to register providers."""
@@ -19,15 +20,28 @@ def _get_providers() -> list[type[IProvider]]:
     discover_providers()
     return BaseProvider.__subclasses__()
 
+@cache
+def _get_providers_map() -> dict[str, type[IProvider]]:
+    """Returns a map of provider names to provider classes."""
+    return {p.__name__: p for p in _get_providers()}
+
+
 def __getattr__(name):
-    if name == "PROVIDERS":
-        return _get_providers()
-    raise AttributeError(f"module {__name__} has no attribute {name}")
+    match name:
+        case "PROVIDERS_LIST":
+            return _get_providers()
+        case "PROVIDERS_MAP":
+            return _get_providers_map()
+        case _:
+            raise AttributeError(f"module {__name__} has no attribute {name}")
+
+# provider_map = {p.__name__: p for p in PROVIDERS}
 
 __all__ = (
     "IProvider",
     "ExecutionStatus",
     "OrderExecutionRequest",
-    "PROVIDERS",
+    "PROVIDERS_LIST",
+    "PROVIDERS_MAP",
 )
 

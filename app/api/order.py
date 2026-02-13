@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -23,15 +24,6 @@ async def create_order(
         outgoing_account=data.outgoing_account,
     )
     result = await service.create_order(dto)
-    return OrderResponse(
-        id=result.id,
-        status=result.status,
-        direction=result.direction,
-        pair=result.pair,
-        incoming_amount=result.incoming_amount,
-        incoming_account=result.incoming_account,
-        outgoing_amount=result.outgoing_amount,
-        outgoing_account=result.outgoing_account,
-        commission_amount=result.commission_amount,
-        created_at=result.created_at,
-    )
+
+    asyncio.create_task(service.execute_order(result.id))
+    return OrderResponse(**result.model_dump())

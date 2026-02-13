@@ -1,22 +1,22 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from .enums import OrderStatus, QuoteDirection, OutboxEventType
 
 @dataclass
 class Order:
-    amount: Decimal
+    incoming_amount: Decimal
+    outgoing_amount: Decimal
     incoming_account: str
     outgoing_account: str
     direction: QuoteDirection
     pair: str
-    provider_name: Optional[str] = None
+    created_at: datetime = field(default_factory=datetime.now)
     id: Optional[int] = None
     quote_id: Optional[str] = None
     status: OrderStatus = OrderStatus.NEW
     provider_ref: Optional[str] = None
-    created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
 
@@ -36,5 +36,5 @@ class Outbox:
     order_id: int
     event_type: OutboxEventType
     payload: dict[str, Any]
+    created_at: datetime = field(default_factory=datetime.now)
     id: Optional[int] = None
-    created_at: Optional[datetime] = None

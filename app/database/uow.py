@@ -4,6 +4,7 @@ from app.database.repositories.quote import QuoteRepository
 from app.database.repositories.outbox import OutboxRepository
 
 
+
 class UnitOfWork:
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]):
         self.session_factory = session_factory
@@ -23,5 +24,8 @@ class UnitOfWork:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.rollback()
-        await self.session.close()
+        try:
+            await self.rollback()
+        finally:
+            await self.session.close()
+            self.session = None

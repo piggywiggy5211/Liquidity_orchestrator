@@ -6,7 +6,8 @@ orders_table = Table(
     "orders",
     metadata,
     Column("id", Integer, primary_key=True),
-    Column("amount", Numeric(precision=20, scale=8), nullable=False),
+    Column("incoming_amount", Numeric(precision=20, scale=8), nullable=False),
+    Column("outgoing_amount", Numeric(precision=20, scale=8), nullable=False),
     Column("incoming_account", String, nullable=False),
     Column("outgoing_account", String, nullable=False),
     Column("direction", Enum(QuoteDirection, native_enum=False), nullable=False),
@@ -19,7 +20,6 @@ orders_table = Table(
         server_default=OrderStatus.NEW.value,
         nullable=False
     ),
-    Column("provider_name", String, nullable=True),
     Column("provider_ref", String, nullable=True),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
     Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now(), nullable=False),

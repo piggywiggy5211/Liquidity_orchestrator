@@ -7,10 +7,13 @@ from app.core.sanitizers.log_sanitizer import mask_iban, LogSanitizer
 from app.core.sanitizers.http_saitazer import sanitize_headers
 from app.core.logger.loguru_logger import serialize_json_log
 from app.service.liquidity_service import LiquidityService
+from app.service.models import Order
 from app.service.dto import QuoteGetDTO
 from app.service.enums import QuoteDirection, OrderStatus
+from app.service.providers import ExecutionStatus
+from app.database.uow import UnitOfWork
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from app.core.http_client import LoggingAsyncClient
 
 
@@ -73,19 +76,20 @@ def test_json_logging_format():
     assert "DE12****7890" in data["message"]
     assert "trace_id" in data
 
-def test_create_order_endpoint(client):
-    response = client.post("/orders", json={
-        "direction": "on-ramp",
-        "pair": "USDT-USD",
-        "amount": 100.0,
-        "incoming_account": "acct-1",
-        "outgoing_account": "acct-2"
-    })
-    assert response.status_code == 200
-    data = response.json()
-    assert "id" in data
-    assert data["status"] == "NEW"
-    assert data["incoming_account"] == "acct-1"
+def test_create_order_endpoint(client, clean_db):
+    with patch("asyncio.sleep", AsyncMock()):
+        response = client.post("/orders", json={
+            "direction": "on-ramp",
+            "pair": "USDT-USD",
+            "amount": 100.0,
+            "incoming_account": "acct-1",
+            "outgoing_account": "acct-2"
+        })
+        assert response.status_code == 200
+        data = response.json()
+        assert "id" in data
+        assert data["status"] == "NEW"
+        assert data["incoming_account"] == "acct-1"
 
 
 def test_get_quote_endpoint(client):
@@ -113,10 +117,10 @@ def test_get_quote_endpoint(client):
     assert data["outgoing_asset_code"] == "EURS"
 
 @pytest.mark.asyncio
-async def test_liquidity_service():
-    mock_db = AsyncMock()
+async def test_liquidity_service(db_session, session_factory, clean_db):
+    uow = UnitOfWork(session_factory)
     mock_http = AsyncMock()
-    service = LiquidityService(mock_db, mock_http)
+    service = LiquidityService(uow, mock_http)
     
     from app.service.dto import OrderCreateDTO
     order_in = OrderCreateDTO(
@@ -127,25 +131,21 @@ async def test_liquidity_service():
         outgoing_account="acct-2"
     )
     
-    # Mocking create method to return a dummy order
-    mock_order = MagicMock()
-    mock_order.id = 123
-    mock_order.status = OrderStatus.NEW
-    mock_order.direction = QuoteDirection.ON_RAMP
-    mock_order.pair = "USDT-USD"
-    mock_order.amount = Decimal("100.0")
-    mock_order.incoming_account = "acct-1"
-    mock_order.outgoing_account = "acct-2"
-    mock_order.created_at = Decimal("0") # Just for check
-    
-    def mock_add(instance):
-        instance.id = 123
-    mock_db.orders.add = MagicMock(side_effect=mock_add)
-    mock_db.commit = AsyncMock()
-    
-    res = await service.create_order(order_in)
-    assert res.id == "123"
-    assert res.status == "NEW"
+    with patch("asyncio.sleep", AsyncMock()):
+        with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
+            mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref-123"}
+
+            created = await service.create_order(order_in)
+            assert created.status == "NEW"
+            assert created.incoming_amount == Decimal("100.0")
+            assert created.outgoing_amount == Decimal("98.0")
+            await service.execute_order(int(created.id))
+
+    async with session_factory() as session:
+        order = await session.get(Order, int(created.id))
+        assert order.status == OrderStatus.COMPLETED
+        assert order.incoming_amount == Decimal("100.0")
+        assert order.outgoing_amount == Decimal("98.0")
     
     quote_dto = QuoteGetDTO(direction=QuoteDirection.ON_RAMP, pair="EUR-EURS", amount=Decimal("100.0"))
     res_q = await service.get_quote(quote_dto)

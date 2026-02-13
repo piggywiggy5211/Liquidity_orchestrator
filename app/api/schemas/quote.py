@@ -1,9 +1,11 @@
 from decimal import Decimal
 from pydantic import BaseModel, Field, field_validator
+
+from app.api.schemas.base import Base
 from app.service.enums import QuoteDirection
 
 
-class QuoteRequest(BaseModel):
+class QuoteRequest(Base):
     direction: QuoteDirection
     pair: str = Field(
         pattern=r"^[a-zA-Z]+-[a-zA-Z]+$",
@@ -18,7 +20,7 @@ class QuoteRequest(BaseModel):
             return v.upper()
         return v
 
-class QuoteResponse(BaseModel):
+class QuoteResponse(Base):
     incoming_amount: str
     incoming_asset_code: str
     outgoing_amount: str

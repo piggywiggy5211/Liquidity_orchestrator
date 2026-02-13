@@ -10,18 +10,18 @@ from app.database.uow import UnitOfWork
 
 
 @pytest.mark.asyncio
-async def test_uow_order_creation(session_factory, clean_db):
+async def test_uow_order_creation(db_session, session_factory, clean_db):
     uow = UnitOfWork(session_factory)
     async with uow:
         order = Order(
-            amount=Decimal("100"),
+            incoming_amount=Decimal("100"),
+            outgoing_amount=Decimal("98"),
             incoming_account="acct-1",
             outgoing_account="acct-2",
             direction=QuoteDirection.ON_RAMP,
             pair="USDT-USD",
             quote_id="q1",
             status=OrderStatus.NEW,
-            provider_name="test_provider",
         )
         uow.orders.add(order)
         await uow.session.flush()  # Populate ID
@@ -37,7 +37,7 @@ async def test_uow_order_creation(session_factory, clean_db):
 
 
 @pytest.mark.asyncio
-async def test_uow_quote_and_outbox(session_factory, clean_db):
+async def test_uow_quote_and_outbox(db_session, session_factory, clean_db):
     uow = UnitOfWork(session_factory)
     async with uow:
         uow.quotes.add(Quote(
@@ -51,14 +51,14 @@ async def test_uow_quote_and_outbox(session_factory, clean_db):
         ))
 
         order = Order(
-            amount=Decimal("100"),
+            incoming_amount=Decimal("100"),
+            outgoing_amount=Decimal("98"),
             incoming_account="acct-1",
             outgoing_account="acct-2",
             direction=QuoteDirection.ON_RAMP,
             pair="USDT-USD",
             quote_id="q2",
             status=OrderStatus.COMPLETED,
-            provider_name="test_provider",
         )
         uow.orders.add(order)
         await uow.session.flush()  # to get order.id

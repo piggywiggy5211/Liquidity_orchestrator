@@ -3,7 +3,7 @@ from .registry import metadata
 from app.service.enums import OutboxEventType
 
 outbox_table = Table(
-    "outboxs",
+    "outbox",  #TODO поправить имя
     metadata,
     Column("id", Integer, primary_key=True),
     Column("order_id", Integer, ForeignKey("orders.id"), nullable=False),

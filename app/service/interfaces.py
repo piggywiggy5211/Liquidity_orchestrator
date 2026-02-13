@@ -1,21 +1,27 @@
-from typing import Protocol, Optional, Sequence, Any
+from typing import Protocol, Optional, Sequence
+
+from app.service.dto import OrderExecutionResult, OrderDTO, QuoteDTO, OutboxDTO
 from app.service.models import Order, Quote, Outbox
 
 
-class IRepository[T](Protocol):
-    async def get(self, id: int) -> Optional[T]: ...
+class IRepository[M, D](Protocol):
+    async def get(self, id: int) -> tuple[Optional[M], Optional[D]]: ...
 
-    async def get_all(self) -> Sequence[T]: ...
+    async def get_all(self) -> tuple[Sequence[M], Sequence[D]]: ...
 
-    def add(self, instance: T) -> None: ...
+    def add(self, instance: M) -> None: ...
 
-    async def delete(self, instance: T) -> None: ...
+    async def delete(self, instance: M) -> None: ...
+
+
+class IRepositoryOrder(IRepository[Order, OrderDTO]):
+    async def set_execution_result(self, data: OrderExecutionResult) -> None: ...
 
 
 class IUnitOfWork(Protocol):
-    orders: IRepository[Order]
-    quotes: IRepository[Quote]
-    outbox: IRepository[Outbox]
+    orders: IRepositoryOrder
+    quotes: IRepository[Quote, QuoteDTO]
+    outbox: IRepository[Outbox, OutboxDTO]
 
     async def commit(self) -> None: ...
 

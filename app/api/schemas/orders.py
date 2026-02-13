@@ -1,14 +1,17 @@
 from decimal import Decimal
 from datetime import datetime
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
+
+from app.api.schemas.base import Base
 from app.service.enums import QuoteDirection
 
-class OrderCreateRequest(BaseModel):
+
+class OrderCreateRequest(Base):
     direction: QuoteDirection
     pair: str = Field(
-        ..., 
-        pattern=r"^[a-zA-Z]+-[a-zA-Z]+$", 
-        description="Asset pair in format 'USDT-USD'"
+        ...,
+        pattern=r"^[a-zA-Z]+-[a-zA-Z]+$",
+        description="Asset pair in format 'USDT-USD'",
     )
     amount: Decimal
     incoming_account: str
@@ -21,8 +24,9 @@ class OrderCreateRequest(BaseModel):
             return v.upper()
         return v
 
-class OrderResponse(BaseModel):
-    id: str
+
+class OrderResponse(Base):
+    id: int
     status: str
     direction: QuoteDirection
     pair: str
