@@ -16,10 +16,8 @@ class BaseRepository[ModelType]:
         result = await self.session.execute(stmt)
         return result.scalars().all()
 
-    async def create(self, **kwargs) -> ModelType:
-        instance = self.model(**kwargs)
+    def add(self, instance: ModelType) -> None:
         self.session.add(instance)
-        return instance
 
     async def delete(self, instance: ModelType) -> None:
         await self.session.delete(instance)

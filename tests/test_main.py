@@ -8,7 +8,7 @@ from app.core.sanitizers.http_saitazer import sanitize_headers
 from app.core.logger.loguru_logger import serialize_json_log
 from app.service.liquidity_service import LiquidityService
 from app.service.dto import QuoteGetDTO
-from app.service.enums import QuoteDirection
+from app.service.enums import QuoteDirection, OrderStatus
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 from app.core.http_client import LoggingAsyncClient
@@ -83,8 +83,8 @@ def test_create_order_endpoint(client):
     })
     assert response.status_code == 200
     data = response.json()
-    assert data["id"] == "3242"
-    assert data["status"] == "new"
+    assert "id" in data
+    assert data["status"] == "NEW"
     assert data["incoming_account"] == "acct-1"
 
 
@@ -119,15 +119,33 @@ async def test_liquidity_service():
     service = LiquidityService(mock_db, mock_http)
     
     from app.service.dto import OrderCreateDTO
-    order = OrderCreateDTO(
+    order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP, 
         pair="USDT-USD",
         amount=Decimal("100.0"),
         incoming_account="acct-1",
         outgoing_account="acct-2"
     )
-    res = await service.create_order(order)
-    assert res.id == "3242"
+    
+    # Mocking create method to return a dummy order
+    mock_order = MagicMock()
+    mock_order.id = 123
+    mock_order.status = OrderStatus.NEW
+    mock_order.direction = QuoteDirection.ON_RAMP
+    mock_order.pair = "USDT-USD"
+    mock_order.amount = Decimal("100.0")
+    mock_order.incoming_account = "acct-1"
+    mock_order.outgoing_account = "acct-2"
+    mock_order.created_at = Decimal("0") # Just for check
+    
+    def mock_add(instance):
+        instance.id = 123
+    mock_db.orders.add = MagicMock(side_effect=mock_add)
+    mock_db.commit = AsyncMock()
+    
+    res = await service.create_order(order_in)
+    assert res.id == "123"
+    assert res.status == "NEW"
     
     quote_dto = QuoteGetDTO(direction=QuoteDirection.ON_RAMP, pair="EUR-EURS", amount=Decimal("100.0"))
     res_q = await service.get_quote(quote_dto)

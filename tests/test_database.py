@@ -4,7 +4,7 @@ from decimal import Decimal
 import pytest
 from sqlalchemy import select
 
-from app.service.models import Order, Outbox
+from app.service.models import Order, Outbox, Quote
 from app.service.enums import OrderStatus, QuoteDirection, OutboxEventType
 from app.database.uow import UnitOfWork
 
@@ -13,7 +13,7 @@ from app.database.uow import UnitOfWork
 async def test_uow_order_creation(session_factory, clean_db):
     uow = UnitOfWork(session_factory)
     async with uow:
-        order = await uow.orders.create(
+        order = Order(
             amount=Decimal("100"),
             incoming_account="acct-1",
             outgoing_account="acct-2",
@@ -23,6 +23,7 @@ async def test_uow_order_creation(session_factory, clean_db):
             status=OrderStatus.NEW,
             provider_name="test_provider",
         )
+        uow.orders.add(order)
         await uow.session.flush()  # Populate ID
         order_id = order.id
         await uow.commit()
@@ -39,7 +40,7 @@ async def test_uow_order_creation(session_factory, clean_db):
 async def test_uow_quote_and_outbox(session_factory, clean_db):
     uow = UnitOfWork(session_factory)
     async with uow:
-        await uow.quotes.create(
+        uow.quotes.add(Quote(
             direction=QuoteDirection.ON_RAMP,
             pair="usd-usdt",
             amount_in=Decimal("100"),
@@ -47,9 +48,9 @@ async def test_uow_quote_and_outbox(session_factory, clean_db):
             amount_fee=Decimal("1"),
             provider_name="test_provider",
             valid_until=datetime.now() + timedelta(minutes=10),
-        )
+        ))
 
-        order = await uow.orders.create(
+        order = Order(
             amount=Decimal("100"),
             incoming_account="acct-1",
             outgoing_account="acct-2",
@@ -59,13 +60,14 @@ async def test_uow_quote_and_outbox(session_factory, clean_db):
             status=OrderStatus.COMPLETED,
             provider_name="test_provider",
         )
+        uow.orders.add(order)
         await uow.session.flush()  # to get order.id
 
-        await uow.outbox.create(
+        uow.outbox.add(Outbox(
             order_id=order.id,
             event_type=OutboxEventType.ORDER_COMPLETED,
             payload={"amount_in": 100, "provider_name": "test_provider"},
-        )
+        ))
         await uow.commit()
 
     # Verify
