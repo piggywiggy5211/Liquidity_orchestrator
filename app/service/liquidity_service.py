@@ -2,7 +2,8 @@
 import httpx
 from loguru import logger
 
-from app.schemas.orders import OrderCreate, OrderResponse, QuoteRequest, QuoteResponse
+from app.api.schemas.order import OrderCreateRequest, OrderResponse
+from app.api.schemas.quote import QuoteRequest, QuoteResponse
 from app.service.interfaces import IUnitOfWork
 
 
@@ -11,7 +12,7 @@ class LiquidityService:
         self.uow = uow
         self.http_client = http_client
 
-    async def create_order(self, order_in: OrderCreate) -> OrderResponse:
+    async def create_order(self, order_in: OrderCreateRequest) -> OrderResponse:
         logger.info(f"Creating order for amount {order_in.amount}")
         async with self.uow:
             # Здесь будет логика создания заказа через репозитории
@@ -22,7 +23,7 @@ class LiquidityService:
         return OrderResponse(id="ord_12345", status="pending")
 
     async def get_quote(self, quote_in: QuoteRequest) -> QuoteResponse:
-        logger.info(f"Getting quote for {quote_in.from_currency} -> {quote_in.to_currency}")
+        logger.info(f"Getting quote for")
         # Stub logic
         return QuoteResponse(
             quote_id="qt_67890",

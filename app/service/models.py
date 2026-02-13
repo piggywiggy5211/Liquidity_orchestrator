@@ -6,7 +6,7 @@ from .enums import OrderStatus, QuoteDirection, OutboxEventType
 
 @dataclass
 class Order:
-    provider_name: str
+    provider_name: Optional[str] = None
     id: Optional[int] = None
     quote_id: Optional[str] = None
     status: OrderStatus = OrderStatus.NEW

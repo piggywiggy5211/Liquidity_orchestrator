@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from app.api.deps import get_liquidity_service
-from app.schemas.orders import OrderCreate, OrderResponse, QuoteRequest, QuoteResponse
+from app.api.schemas.order import OrderCreateRequest, OrderResponse
 from app.service.liquidity_service import LiquidityService
 
 router = APIRouter()
@@ -11,7 +11,7 @@ router = APIRouter()
 
 @router.post("/create_order", response_model=OrderResponse)
 async def create_order(
-        order_in: OrderCreate,
+        order_in: OrderCreateRequest,
         service: Annotated[LiquidityService, Depends(get_liquidity_service)],
 ):
     return await service.create_order(order_in)

@@ -7,7 +7,8 @@ from app.core.sanitizers.log_sanitizer import mask_iban, LogSanitizer
 from app.core.sanitizers.http_saitazer import sanitize_headers
 from app.core.logger.loguru_logger import serialize_json_log
 from app.service.liquidity_service import LiquidityService
-from app.schemas.orders import OrderCreate, QuoteRequest
+from app.api.schemas.quote import QuoteRequest
+from app.api.schemas.order import OrderCreateRequest
 from unittest.mock import AsyncMock, MagicMock
 from app.core.http_client import LoggingAsyncClient
 
@@ -99,7 +100,7 @@ async def test_liquidity_service():
     mock_http = AsyncMock()
     service = LiquidityService(mock_db, mock_http)
     
-    order = OrderCreate(amount=100.0, currency="USD", destination_address="0x123")
+    order = OrderCreateRequest(amount=100.0, currency="USD", destination_address="0x123")
     res = await service.create_order(order)
     assert res.id == "ord_12345"
     
