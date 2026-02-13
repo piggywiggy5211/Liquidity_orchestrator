@@ -7,8 +7,8 @@ from app.service.liquidity_service import LiquidityService
 
 router = APIRouter(tags=["Quotes"])
 
-@router.get("/get_quote", response_model=QuoteResponse)
-async def get_quote(
+@router.get("/calculate-quote", response_model=QuoteResponse)
+async def calculate_quote(
         data: QuoteRequest = Query(),
         service: LiquidityService = Depends(get_liquidity_service),
 ):

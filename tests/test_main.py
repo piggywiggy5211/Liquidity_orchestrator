@@ -8,7 +8,6 @@ from app.core.sanitizers.http_saitazer import sanitize_headers
 from app.core.logger.loguru_logger import serialize_json_log
 from app.service.liquidity_service import LiquidityService
 from app.service.dto import QuoteGetDTO
-from app.api.schemas.order import OrderCreateRequest
 from app.service.enums import QuoteDirection
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
@@ -75,18 +74,23 @@ def test_json_logging_format():
     assert "trace_id" in data
 
 def test_create_order_endpoint(client):
-    response = client.post("/create_order", json={
+    response = client.post("/orders", json={
+        "direction": "on-ramp",
+        "pair": "USDT-USD",
         "amount": 100.0,
-        "currency": "USD",
-        "destination_address": "0x123"
+        "incoming_account": "acct-1",
+        "outgoing_account": "acct-2"
     })
     assert response.status_code == 200
-    assert response.json() == {"id": "ord_12345", "status": "pending"}
+    data = response.json()
+    assert data["id"] == "3242"
+    assert data["status"] == "new"
+    assert data["incoming_account"] == "acct-1"
 
 
 def test_get_quote_endpoint(client):
     # Test with uppercase
-    response = client.get("/get_quote", params={
+    response = client.get("/orders/calculate-quote", params={
         "direction": "on-ramp",
         "pair": "EUR-EURS",
         "amount": 100.0
@@ -97,7 +101,7 @@ def test_get_quote_endpoint(client):
     assert data["incoming_asset_code"] == "EUR"
     
     # Test with lowercase (should be case-insensitive and auto-uppercased)
-    response = client.get("/get_quote", params={
+    response = client.get("/orders/calculate-quote", params={
         "direction": "on-ramp",
         "pair": "eur-eurs",
         "amount": 100.0
@@ -114,13 +118,21 @@ async def test_liquidity_service():
     mock_http = AsyncMock()
     service = LiquidityService(mock_db, mock_http)
     
-    order = OrderCreateRequest(amount=100.0, currency="USD", destination_address="0x123")
+    from app.service.dto import OrderCreateDTO
+    order = OrderCreateDTO(
+        direction=QuoteDirection.ON_RAMP, 
+        pair="USDT-USD",
+        amount=Decimal("100.0"),
+        incoming_account="acct-1",
+        outgoing_account="acct-2"
+    )
     res = await service.create_order(order)
-    assert res.id == "ord_12345"
+    assert res.id == "3242"
     
     quote_dto = QuoteGetDTO(direction=QuoteDirection.ON_RAMP, pair="EUR-EURS", amount=Decimal("100.0"))
     res_q = await service.get_quote(quote_dto)
     assert res_q.incoming_amount == Decimal("100.0")
+    # With default 0.02 fee: 100 - 2 = 98
     assert res_q.outgoing_amount == Decimal("98")
 
 @pytest.mark.asyncio

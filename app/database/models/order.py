@@ -1,11 +1,16 @@
-from sqlalchemy import Table, Column, Integer, String, DateTime, func, Enum
+from sqlalchemy import Table, Column, Integer, String, DateTime, func, Enum, Numeric
 from .registry import metadata
-from app.service.enums import OrderStatus
+from app.service.enums import OrderStatus, QuoteDirection
 
 orders_table = Table(
     "orders",
     metadata,
     Column("id", Integer, primary_key=True),
+    Column("amount", Numeric(precision=20, scale=8), nullable=False),
+    Column("incoming_account", String, nullable=False),
+    Column("outgoing_account", String, nullable=False),
+    Column("direction", Enum(QuoteDirection, native_enum=False), nullable=False),
+    Column("pair", String, nullable=False),
     Column("quote_id", String, unique=True, nullable=True),
     Column(
         "status", 

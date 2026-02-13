@@ -1,11 +1,16 @@
 
 import httpx
+from datetime import datetime
 from decimal import Decimal
 from loguru import logger
 
-from app.api.schemas.order import OrderCreateRequest, OrderResponse
 from app.core.config import settings
-from app.service.dto import QuoteGetDTO, QuoteResultDTO
+from app.service.dto import (
+    QuoteGetDTO, 
+    QuoteResultDTO,
+    OrderCreateDTO,
+    OrderResultDTO,
+)
 from app.service.interfaces import IUnitOfWork
 
 
@@ -14,15 +19,21 @@ class LiquidityService:
         self.uow = uow
         self.http_client = http_client
 
-    async def create_order(self, order_in: OrderCreateRequest) -> OrderResponse:
-        logger.info(f"Creating order for amount {order_in.amount}")
-        async with self.uow:
-            # Здесь будет логика создания заказа через репозитории
-            # order = await self.uow.orders.create(...)
-            # await self.uow.commit()
-            response = await self.http_client.get("https://pokeapi.co/api/v2/pokemon/ditto")
-        
-        return OrderResponse(id="ord_12345", status="pending")
+    async def create_order(self, data: OrderCreateDTO) -> OrderResultDTO:
+        logger.info(f"Creating order for amount {data.amount} pair {data.pair}")
+        # Заглушка
+        return OrderResultDTO(
+            id="3242",
+            status="new",
+            direction=data.direction,
+            pair=data.pair,
+            incoming_amount=Decimal("0"),
+            incoming_account=data.incoming_account,
+            outgoing_amount=Decimal("0"),
+            outgoing_account=data.outgoing_account,
+            commission_amount=Decimal("0"),
+            created_at=datetime.now()
+        )
 
     async def get_quote(self, data: QuoteGetDTO) -> QuoteResultDTO:
         logger.info(f"calculating quote for pair={data.pair} direction={data.direction}, amount={data.amount}")

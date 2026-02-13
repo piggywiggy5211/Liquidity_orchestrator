@@ -4,8 +4,14 @@ from app.main import main_app
 
 def test_request_response_logging(capsys):
     with TestClient(main_app) as client:
-        payload = {"amount": 100.0, "currency": "USD", "destination_address": "0x123"}
-        response = client.post("/create_order", json=payload)
+        payload = {
+            "direction": "on-ramp",
+            "pair": "USDT-USD",
+            "amount": 100.0,
+            "incoming_account": "acct-1",
+            "outgoing_account": "acct-2"
+        }
+        response = client.post("/orders", json=payload)
         
         assert response.status_code == 200
     
@@ -29,8 +35,14 @@ def test_request_response_logging_with_iban(capsys):
     with TestClient(main_app) as client:
         # IBAN in headers or body
         iban = "DE12345678901234567890"
-        payload = {"amount": 100.0, "currency": "USD", "destination_address": iban}
-        client.post("/create_order", json=payload)
+        payload = {
+            "direction": "on-ramp",
+            "pair": "USDT-USD",
+            "amount": 100.0,
+            "incoming_account": "acct-1",
+            "outgoing_account": iban
+        }
+        client.post("/orders", json=payload)
     
     captured = capsys.readouterr().out
     assert "DE12****7890" in captured

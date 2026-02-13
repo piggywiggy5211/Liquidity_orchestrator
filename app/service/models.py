@@ -6,6 +6,11 @@ from .enums import OrderStatus, QuoteDirection, OutboxEventType
 
 @dataclass
 class Order:
+    amount: Decimal
+    incoming_account: str
+    outgoing_account: str
+    direction: QuoteDirection
+    pair: str
     provider_name: Optional[str] = None
     id: Optional[int] = None
     quote_id: Optional[str] = None
@@ -13,6 +18,7 @@ class Order:
     provider_ref: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
 
 @dataclass
 class Quote:

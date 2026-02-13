@@ -14,6 +14,11 @@ async def test_uow_order_creation(session_factory, clean_db):
     uow = UnitOfWork(session_factory)
     async with uow:
         order = await uow.orders.create(
+            amount=Decimal("100"),
+            incoming_account="acct-1",
+            outgoing_account="acct-2",
+            direction=QuoteDirection.ON_RAMP,
+            pair="USDT-USD",
             quote_id="q1",
             status=OrderStatus.NEW,
             provider_name="test_provider",
@@ -45,6 +50,11 @@ async def test_uow_quote_and_outbox(session_factory, clean_db):
         )
 
         order = await uow.orders.create(
+            amount=Decimal("100"),
+            incoming_account="acct-1",
+            outgoing_account="acct-2",
+            direction=QuoteDirection.ON_RAMP,
+            pair="USDT-USD",
             quote_id="q2",
             status=OrderStatus.COMPLETED,
             provider_name="test_provider",
