@@ -27,7 +27,12 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(lifespan=lifespan)
+    app = FastAPI(
+        title="Liquidity Orchestrator",
+        description="API Liquidity Orchestrator (Onramp/Offramp)",
+        version="0.1.0",
+        lifespan=lifespan,
+    )
     # middlewares
     app.add_middleware(RequestResponseLoggingMiddleware)
     app.add_middleware(LoggerContextMiddleware)

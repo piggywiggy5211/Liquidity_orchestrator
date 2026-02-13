@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel
@@ -39,6 +40,7 @@ class Settings(BaseSettings):
 
     logging: LoggingConfig = LoggingConfig()
     run: RunConfig = RunConfig()
+    service_fee: Decimal = Decimal("0.02")
 
     model_config = SettingsConfigDict(
         env_file=(".env",),

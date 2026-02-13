@@ -1,9 +1,11 @@
 
 import httpx
+from decimal import Decimal
 from loguru import logger
 
 from app.api.schemas.order import OrderCreateRequest, OrderResponse
-from app.api.schemas.quote import QuoteRequest, QuoteResponse
+from app.core.config import settings
+from app.service.dto import QuoteGetDTO, QuoteResultDTO
 from app.service.interfaces import IUnitOfWork
 
 
@@ -22,11 +24,17 @@ class LiquidityService:
         
         return OrderResponse(id="ord_12345", status="pending")
 
-    async def get_quote(self, quote_in: QuoteRequest) -> QuoteResponse:
-        logger.info(f"Getting quote for")
-        # Stub logic
-        return QuoteResponse(
-            quote_id="qt_67890",
-            rate=0.95,
-            estimated_amount=quote_in.amount * 0.95
+    async def get_quote(self, data: QuoteGetDTO) -> QuoteResultDTO:
+        logger.info(f"calculating quote for pair={data.pair} direction={data.direction}, amount={data.amount}")
+        incoming_asset, outgoing_asset, *_ = data.pair.split("-")
+        fee_amount = data.amount * settings.service_fee
+        outgoing_amount = data.amount - fee_amount
+
+        return QuoteResultDTO(
+            incoming_amount=data.amount,
+            incoming_asset_code=incoming_asset,
+            outgoing_amount=outgoing_amount,
+            outgoing_asset_code=outgoing_asset,
+            fee_amount=fee_amount,
+            fee_asset_code=incoming_asset,
         )

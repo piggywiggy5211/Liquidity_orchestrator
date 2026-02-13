@@ -7,8 +7,10 @@ from app.core.sanitizers.log_sanitizer import mask_iban, LogSanitizer
 from app.core.sanitizers.http_saitazer import sanitize_headers
 from app.core.logger.loguru_logger import serialize_json_log
 from app.service.liquidity_service import LiquidityService
-from app.api.schemas.quote import QuoteRequest
+from app.service.dto import QuoteGetDTO
 from app.api.schemas.order import OrderCreateRequest
+from app.service.enums import QuoteDirection
+from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 from app.core.http_client import LoggingAsyncClient
 
@@ -83,16 +85,28 @@ def test_create_order_endpoint(client):
 
 
 def test_get_quote_endpoint(client):
+    # Test with uppercase
     response = client.get("/get_quote", params={
-        "from_currency": "USD",
-        "to_currency": "EUR",
+        "direction": "on-ramp",
+        "pair": "EUR-EURS",
         "amount": 100.0
     })
     assert response.status_code == 200
     data = response.json()
-    assert data["quote_id"] == "qt_67890"
-    assert data["rate"] == 0.95
-    assert data["estimated_amount"] == 95.0
+    assert data["incoming_amount"] == "100.00"
+    assert data["incoming_asset_code"] == "EUR"
+    
+    # Test with lowercase (should be case-insensitive and auto-uppercased)
+    response = client.get("/get_quote", params={
+        "direction": "on-ramp",
+        "pair": "eur-eurs",
+        "amount": 100.0
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["incoming_amount"] == "100.00"
+    assert data["incoming_asset_code"] == "EUR"
+    assert data["outgoing_asset_code"] == "EURS"
 
 @pytest.mark.asyncio
 async def test_liquidity_service():
@@ -104,9 +118,10 @@ async def test_liquidity_service():
     res = await service.create_order(order)
     assert res.id == "ord_12345"
     
-    quote = QuoteRequest(from_currency="USD", to_currency="EUR", amount=100.0)
-    res_q = await service.get_quote(quote)
-    assert res_q.quote_id == "qt_67890"
+    quote_dto = QuoteGetDTO(direction=QuoteDirection.ON_RAMP, pair="EUR-EURS", amount=Decimal("100.0"))
+    res_q = await service.get_quote(quote_dto)
+    assert res_q.incoming_amount == Decimal("100.0")
+    assert res_q.outgoing_amount == Decimal("98")
 
 @pytest.mark.asyncio
 async def test_httpx_logging_transport(capsys):
