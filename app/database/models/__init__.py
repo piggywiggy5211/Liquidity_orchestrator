@@ -1,11 +1,13 @@
-__all__ = (
-    "Base",
-    "Order",
-    "Quote",
-    "Outbox",
-)
+from .registry import metadata
+from .order import orders_table
+from .quote import quotes_table
+from .outbox import outbox_table
+from .mappers import map_models_sqlalchemy
 
-from .base import Base
-from .order import Order
-from .quote import Quote
-from .outbox import Outbox
+__all__ = (
+    "metadata",
+    "orders_table",
+    "quotes_table",
+    "outbox_table",
+    "map_models_sqlalchemy",
+)

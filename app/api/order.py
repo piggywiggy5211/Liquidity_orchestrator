@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.deps import get_liquidity_service
 from app.schemas.orders import OrderCreate, OrderResponse, QuoteRequest, QuoteResponse
-from app.services.liquidity import LiquidityService
+from app.service.liquidity_service import LiquidityService
 
 router = APIRouter()
 

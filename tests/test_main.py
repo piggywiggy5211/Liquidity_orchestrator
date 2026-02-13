@@ -6,7 +6,7 @@ from app.main import main_app
 from app.core.sanitizers.log_sanitizer import mask_iban, LogSanitizer
 from app.core.sanitizers.http_saitazer import sanitize_headers
 from app.core.logger.loguru_logger import serialize_json_log
-from app.services.liquidity import LiquidityService
+from app.service.liquidity_service import LiquidityService
 from app.schemas.orders import OrderCreate, QuoteRequest
 from unittest.mock import AsyncMock, MagicMock
 from app.core.http_client import LoggingAsyncClient

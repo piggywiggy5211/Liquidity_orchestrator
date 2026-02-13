@@ -1,16 +1,16 @@
-from datetime import datetime
-from sqlalchemy import String, DateTime, Numeric, Enum
-from sqlalchemy.orm import Mapped, mapped_column
-from .base import Base
-from decimal import Decimal
-from .enums import QuoteDirection
+from sqlalchemy import Table, Column, Integer, String, DateTime, Numeric, Enum
+from .registry import metadata
+from app.service.enums import QuoteDirection
 
-
-class Quote(Base):
-    direction: Mapped[QuoteDirection] = mapped_column(Enum(QuoteDirection, native_enum=False))
-    pair: Mapped[str] = mapped_column(String)  # e.g., "usd-usdt"
-    amount_in: Mapped[Decimal] = mapped_column(Numeric(precision=20, scale=8))
-    amount_out: Mapped[Decimal] = mapped_column(Numeric(precision=20, scale=8))
-    amount_fee: Mapped[Decimal] = mapped_column(Numeric(precision=20, scale=8))
-    provider_name: Mapped[str] = mapped_column(String)
-    valid_until: Mapped[datetime] = mapped_column(DateTime)
+quotes_table = Table(
+    "quotes",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("direction", Enum(QuoteDirection, native_enum=False), nullable=False),
+    Column("pair", String, nullable=False),
+    Column("amount_in", Numeric(precision=20, scale=8), nullable=False),
+    Column("amount_out", Numeric(precision=20, scale=8), nullable=False),
+    Column("amount_fee", Numeric(precision=20, scale=8), nullable=False),
+    Column("provider_name", String, nullable=False),
+    Column("valid_until", DateTime, nullable=False),
+)

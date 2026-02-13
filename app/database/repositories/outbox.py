@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database.models import Outbox
+from app.service.models import Outbox
 from .base import BaseRepository
 
 

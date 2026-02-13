@@ -3,7 +3,7 @@ import httpx
 from loguru import logger
 
 from app.schemas.orders import OrderCreate, OrderResponse, QuoteRequest, QuoteResponse
-from app.services.interfaces import IUnitOfWork
+from app.service.interfaces import IUnitOfWork
 
 
 class LiquidityService:

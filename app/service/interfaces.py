@@ -1,0 +1,26 @@
+from typing import Protocol, Optional, Sequence, Any
+from app.service.models import Order, Quote, Outbox
+
+
+class IRepository[T](Protocol):
+    async def get(self, id: int) -> Optional[T]: ...
+
+    async def get_all(self) -> Sequence[T]: ...
+
+    async def create(self, **kwargs: Any) -> T: ...
+
+    async def delete(self, instance: T) -> None: ...
+
+
+class IUnitOfWork(Protocol):
+    orders: IRepository[Order]
+    quotes: IRepository[Quote]
+    outbox: IRepository[Outbox]
+
+    async def commit(self) -> None: ...
+
+    async def rollback(self) -> None: ...
+
+    async def __aenter__(self) -> "IUnitOfWork": ...
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None: ...

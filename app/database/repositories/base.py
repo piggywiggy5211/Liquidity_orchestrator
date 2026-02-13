@@ -1,10 +1,9 @@
 from typing import Type, Optional, Sequence
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database.models.base import Base
 
 
-class BaseRepository[ModelType: Base]:
+class BaseRepository[ModelType]:
     def __init__(self, model: Type[ModelType], session: AsyncSession):
         self.model = model
         self.session = session

@@ -4,15 +4,14 @@ from decimal import Decimal
 import pytest
 from sqlalchemy import select
 
-from app.database.db_helper import db_helper
-from app.database.models import Order, Outbox
-from app.database.models.enums import OrderStatus, QuoteDirection, OutboxEventType
+from app.service.models import Order, Outbox
+from app.service.enums import OrderStatus, QuoteDirection, OutboxEventType
 from app.database.uow import UnitOfWork
 
 
 @pytest.mark.asyncio
-async def test_uow_order_creation():
-    uow = UnitOfWork(db_helper.session_factory)
+async def test_uow_order_creation(session_factory, clean_db):
+    uow = UnitOfWork(session_factory)
     async with uow:
         order = await uow.orders.create(
             quote_id="q1",
@@ -24,7 +23,7 @@ async def test_uow_order_creation():
         await uow.commit()
 
     # Verify in new session
-    async with db_helper.session_factory() as session:
+    async with session_factory() as session:
         repo_order = await session.get(Order, order_id)
         assert repo_order is not None
         assert repo_order.quote_id == "q1"
@@ -32,8 +31,8 @@ async def test_uow_order_creation():
 
 
 @pytest.mark.asyncio
-async def test_uow_quote_and_outbox():
-    uow = UnitOfWork(db_helper.session_factory)
+async def test_uow_quote_and_outbox(session_factory, clean_db):
+    uow = UnitOfWork(session_factory)
     async with uow:
         await uow.quotes.create(
             direction=QuoteDirection.ON_RAMP,
@@ -60,7 +59,7 @@ async def test_uow_quote_and_outbox():
         await uow.commit()
 
     # Verify
-    async with db_helper.session_factory() as session:
+    async with session_factory() as session:
         res = await session.execute(select(Order).where(Order.quote_id == "q2"))
         db_order = res.scalar_one()
         assert db_order.status == OrderStatus.COMPLETED

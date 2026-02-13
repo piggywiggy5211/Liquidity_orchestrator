@@ -5,7 +5,7 @@ from fastapi import Depends, Request
 
 from app.database.db_helper import db_helper
 from app.database.uow import UnitOfWork
-from app.services.liquidity import LiquidityService
+from app.service.liquidity_service import LiquidityService
 
 
 async def get_http_client(request: Request) -> httpx.AsyncClient:

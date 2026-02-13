@@ -1,29 +1,21 @@
-from datetime import datetime
-from typing import Optional
-from sqlalchemy import String, DateTime, func, Enum
-from sqlalchemy.orm import Mapped, mapped_column
-from .base import Base
-from .enums import OrderStatus
+from sqlalchemy import Table, Column, Integer, String, DateTime, func, Enum
+from .registry import metadata
+from app.service.enums import OrderStatus
 
-
-class Order(Base):
-    quote_id: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
-    status: Mapped[OrderStatus] = mapped_column(
+orders_table = Table(
+    "orders",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("quote_id", String, unique=True, nullable=True),
+    Column(
+        "status", 
         Enum(OrderStatus, native_enum=False), 
         default=OrderStatus.NEW,
-        server_default=OrderStatus.NEW.value
-    )
-    provider_name: Mapped[str] = mapped_column(String)
-    provider_ref: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=func.now(), 
-        server_default=func.now()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=func.now(),
-        server_default=func.now(),
-        onupdate=func.now()
-    )
+        server_default=OrderStatus.NEW.value,
+        nullable=False
+    ),
+    Column("provider_name", String, nullable=False),
+    Column("provider_ref", String, nullable=True),
+    Column("created_at", DateTime, server_default=func.now(), nullable=False),
+    Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now(), nullable=False),
+)

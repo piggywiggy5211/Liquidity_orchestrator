@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database.models import Order
+from app.service.models import Order
 from .base import BaseRepository
 
 

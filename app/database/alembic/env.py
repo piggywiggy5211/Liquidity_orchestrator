@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 from app.core.config import settings
-from app.database.models import Base
+from app.database.models import metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -24,7 +24,7 @@ config.set_main_option("sqlalchemy.url", str(settings.db.url))
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-target_metadata = Base.metadata
+target_metadata = metadata
 
 
 def run_migrations_offline() -> None:

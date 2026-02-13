@@ -10,8 +10,10 @@ from app.core.middleware.logger_context import LoggerContextMiddleware
 from app.core.middleware.logging_request_response import RequestResponseLoggingMiddleware
 from app.core.tracer import init_tracer
 from app.router import api_router
+from app.database.models import map_models_sqlalchemy
 
 setup_logger()
+map_models_sqlalchemy()
 
 
 @asynccontextmanager
