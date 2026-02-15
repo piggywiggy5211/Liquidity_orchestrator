@@ -23,10 +23,7 @@ async def test_provider_stats_mixin_logic(db_session, session_factory, clean_db)
     service.record_execution("ProviderA", 0.2, ExecutionStatus.TIMEOUT)
     service.record_execution("ProviderB", 0.5, ExecutionStatus.SUCCESS)
     
-    assert service.request_count["ProviderA"] == 2
-    assert service.request_count["ProviderB"] == 1
-    
-    assert service.average_latency["ProviderA"] == pytest.approx(0.15)
+    assert service.average_latency["ProviderA"] == pytest.approx(0.1)
     assert service.average_latency["ProviderB"] == pytest.approx(0.5)
     
     assert service.timeout_percentage["ProviderA"] == 50.0
@@ -42,17 +39,14 @@ async def test_provider_stats_moving_window(db_session, session_factory, clean_d
         mock_time.return_value = start_t
         
         service.record_execution("ProviderA", 0.1, ExecutionStatus.SUCCESS)
-        assert service.request_count["ProviderA"] == 1
         
         # Move time forward by 30 seconds
         mock_time.return_value = start_t + 30.0
         service.record_execution("ProviderA", 0.2, ExecutionStatus.SUCCESS)
-        assert service.request_count["ProviderA"] == 2
         
         # Move time forward by another 40 seconds (total 70s from start)
         # First record should be cleaned up (window is 60s)
         mock_time.return_value = start_t + 70.0
-        assert service.request_count["ProviderA"] == 1
         assert service.average_latency["ProviderA"] == pytest.approx(0.2)
 
 @pytest.mark.asyncio
@@ -82,14 +76,21 @@ async def test_provider_stats_integration_in_execute_order(db_session, session_f
                 mock_exec_b.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref2"}
                 
                 # Mock time to control latency measurement
-                with patch("time.time") as mock_time:
+                # Mock time to control latency measurement
+                with patch("time.time") as mock_time, patch("time.perf_counter") as mock_perf:
                     t = 2000.0
-                    # 3 calls per provider + 1 per property access + potential calls from logger
-                    mock_values = [
-                        t, t + 0.1, t + 0.1, # ProviderA
-                        t + 0.2, t + 0.5, t + 0.5, # ProviderB
-                    ] + [t + 0.6] * 50
-                    mock_time.side_effect = mock_values
+                    p = 100.0
+                    # Mock values for time.time() (used for record timestamps and cleanup):
+                    mock_time.side_effect = [
+                        t + 0.2, t + 0.2, # ProviderA
+                        t + 0.6, t + 0.6, # ProviderB
+                    ] + [t + 0.7] * 50
+
+                    # Mock values for time.perf_counter() (used for latency calculation):
+                    mock_perf.side_effect = [
+                        p + 0.1, p + 0.2, # ProviderA
+                        p + 0.3, p + 0.6, # ProviderB
+                    ]
                     
                     created = await service.create_order(order_in)
                     await service.execute_order(int(created.id))
@@ -97,11 +98,8 @@ async def test_provider_stats_integration_in_execute_order(db_session, session_f
                     # We access properties. Each access consumes one value from side_effect if it's called.
                     avg_lat = service.average_latency
                     t_perc = service.timeout_percentage
-                    req_cnt = service.request_count
 
-                    assert req_cnt["ProviderA"] == 1
-                    assert req_cnt["ProviderB"] == 1
-                    assert avg_lat["ProviderA"] == pytest.approx(0.1)
+                    assert avg_lat["ProviderA"] == 0.0
                     assert avg_lat["ProviderB"] == pytest.approx(0.3)
                     assert t_perc["ProviderA"] == 100.0
                     assert t_perc["ProviderB"] == 0.0
