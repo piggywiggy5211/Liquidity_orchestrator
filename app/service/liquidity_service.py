@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 
 import httpx
+import pandas as pd
 from loguru import logger
 
 from app.core.config import settings
@@ -88,9 +89,52 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
         )
 
     def _build_execution_plan(self, quotes: list[QuoteDTO], ) -> list[QuoteDTO]:
-        execute_plan = sorted(quotes, key=lambda q: q.fee_rate)
-        logger.info(f"built execute plan")  # TODO add details to log
-        return execute_plan
+        if not quotes:
+            return []
+
+        # Prepare data for scoring
+        avg_latencies_by_providers = self.average_latency
+        timeout_percentages_by_providers = self.timeout_percentage
+
+        data = []
+        for q in quotes:
+            p_name = q.provider_name
+            data.append({
+                "quote": q,
+                "fee_rate": float(q.fee_rate),
+                "latency": avg_latencies_by_providers.get(p_name, 0.0),
+                "timeout": timeout_percentages_by_providers.get(p_name, 0.0)
+            })
+
+        df = pd.DataFrame(data)
+
+        def interpolate_score(series):
+            if series.max() == series.min():
+                return 10.0
+            # Linear interpolation: min -> 10, max -> 1 (lower is better for all our metrics)
+            min_score = 10.0
+            max_score = 1.0
+            return min_score + (max_score - min_score) * (series - series.min()) / (series.max() - series.min())
+
+        df["fee_score"] = interpolate_score(df["fee_rate"])
+        df["latency_score"] = interpolate_score(df["latency"])
+        df["timeout_score"] = interpolate_score(df["timeout"])
+
+        timeout_weight = 0.5
+        fee_weight = 0.4
+        latency_weight = 0.1
+
+        df["final_score"] = (
+            df["timeout_score"] * timeout_weight +
+            df["fee_score"] * fee_weight +
+            df["latency_score"] * latency_weight
+        )
+
+        # Sort by final score descending
+        df = df.sort_values("final_score", ascending=False)
+
+        logger.info(f"Built execution plan with scores:\n{df[['fee_rate', 'latency', 'timeout', 'final_score']]}")
+        return df["quote"].tolist()
 
     async def _fetch_quotes_from_providers(self, order: OrderDTO) -> list[QuoteDTO]:
         tasks = [
