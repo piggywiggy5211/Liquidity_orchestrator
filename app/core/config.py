@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     logging: LoggingConfig = LoggingConfig()
     run: RunConfig = RunConfig()
     service_fee: Decimal = Decimal("0.02")
+    max_order_amount: Decimal = Decimal("1000")
     quote_ttl: int = 60
     stats_window_seconds: int = 60
 

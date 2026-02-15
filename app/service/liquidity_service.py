@@ -1,6 +1,7 @@
 import asyncio
 import time
 from datetime import datetime
+from decimal import Decimal
 
 import httpx
 import pandas as pd
@@ -26,6 +27,9 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
     def __init__(self, uow: IUnitOfWork, http_client: httpx.AsyncClient):
         self.uow = uow
         self.http_client = http_client
+
+    def validate_sum(self, amount: Decimal) -> bool:
+        return amount <= settings.max_order_amount
 
     async def create_order(self, data: OrderCreateDTO) -> OrderDTO:
         logger.info(f"Creating order for amount {data.amount} pair {data.pair}")
