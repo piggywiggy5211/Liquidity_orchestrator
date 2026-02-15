@@ -34,5 +34,5 @@ uv run pytest -vv
 ## Running the Application
 
 ```bash
-uv run uvicorn main:app --reload
+uv run python -m app.main
 ```

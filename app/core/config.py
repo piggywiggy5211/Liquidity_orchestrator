@@ -1,14 +1,15 @@
+from pathlib import Path
 from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
+BASE_DIR = Path(__file__).parent.parent.parent
 
 
 class DatabaseConfig(BaseModel):
-    url: str = "sqlite+aiosqlite:///./test.db"
+    url: str = f"sqlite+aiosqlite:///{BASE_DIR}/test.db"
     echo: bool = False
     echo_pool: bool = False
     pool_size: int = 50

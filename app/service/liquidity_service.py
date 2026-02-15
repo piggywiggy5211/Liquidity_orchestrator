@@ -18,8 +18,8 @@ from app.service.dto import (
 )
 from app.service.enums import OrderStatus, OutboxEventType as OET
 from app.service.interfaces import IUnitOfWork
-from app.service.models import Order, Quote, Outbox
 from app.service.mixins import TaskWrapperMixin, ProviderStatsMixin
+from app.service.models import Order, Quote, Outbox
 from app.service.providers import PROVIDERS_LIST, OrderExecutionRequest, ExecutionStatus, IProvider, PROVIDERS_MAP
 
 
@@ -103,12 +103,14 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
         data = []
         for q in quotes:
             p_name = q.provider_name
-            data.append({
-                "quote": q,
-                "fee_rate": float(q.fee_rate),
-                "latency": avg_latencies_by_providers.get(p_name, 0.0),
-                "timeout": timeout_percentages_by_providers.get(p_name, 0.0)
-            })
+            data.append(
+                {
+                    "quote": q,
+                    "fee_rate": float(q.fee_rate),
+                    "latency": avg_latencies_by_providers.get(p_name, 0.0),
+                    "timeout": timeout_percentages_by_providers.get(p_name, 0.0),
+                },
+            )
 
         df = pd.DataFrame(data)
 
@@ -129,9 +131,9 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
         latency_weight = 0.1
 
         df["final_score"] = (
-            df["timeout_score"] * timeout_weight +
-            df["fee_score"] * fee_weight +
-            df["latency_score"] * latency_weight
+                df["timeout_score"] * timeout_weight +
+                df["fee_score"] * fee_weight +
+                df["latency_score"] * latency_weight
         )
 
         # Sort by final score descending
@@ -142,9 +144,11 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
 
     async def _fetch_quotes_from_providers(self, order: OrderDTO) -> list[QuoteDTO]:
         tasks = [
-            asyncio.create_task(self.task_wrapper(
-                self._fetch_provider_quote,order, provider_instance=provider_cls()
-            ))
+            asyncio.create_task(
+                self.task_wrapper(
+                    self._fetch_provider_quote, order, provider_instance=provider_cls(),
+                ),
+            )
             for provider_cls in PROVIDERS_LIST
         ]
         results = list()
