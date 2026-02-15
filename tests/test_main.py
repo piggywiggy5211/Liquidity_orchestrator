@@ -11,7 +11,7 @@ from app.service.models import Order
 from app.service.dto import QuoteGetDTO
 from app.service.enums import QuoteDirection, OrderStatus
 from app.service.providers import ExecutionStatus
-from app.database.uow import UnitOfWork
+from app.database.uow import UnitOfWorkSqlAlchemy
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 from app.core.http_client import LoggingAsyncClient
@@ -118,7 +118,7 @@ def test_get_quote_endpoint(client):
 
 @pytest.mark.asyncio
 async def test_liquidity_service(db_session, session_factory, clean_db):
-    uow = UnitOfWork(session_factory)
+    uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     mock_http = AsyncMock()
     service = LiquidityService(uow, mock_http)
     

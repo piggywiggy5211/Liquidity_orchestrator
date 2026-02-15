@@ -25,5 +25,5 @@ async def create_order(
     )
     result = await service.create_order(dto)
 
-    asyncio.create_task(service.execute_order(result.id))
+    asyncio.create_task(service.task_wrapper(service.execute_order, result.id))
     return OrderResponse(**result.model_dump())

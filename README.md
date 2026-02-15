@@ -1,37 +1,37 @@
 # Liquidity Orchestrator
 
-Проект для оркестрации ликвидности (Onramp/Offramp).
+Project for liquidity orchestration (Onramp/Offramp).
 
-## Установка зависимостей
+## Installing Dependencies
 
-Проект использует `uv` для управления зависимостями.
+The project uses `uv` for dependency management.
 ```bash
 uv sync
 ```
 
-## Работа с базой данных (Alembic)
-Миграции находятся в папке `app/database/alembic`.
+## Database Management (Alembic)
+Migrations are located in the `app/database/alembic` directory.
 
-### Запуск миграций
-Для применения всех миграций к базе данных:
+### Running Migrations
+To apply all migrations to the database:
 ```bash
 uv run alembic upgrade head
 ```
 
-### Создание новой миграции
-Для автоматической генерации миграции на основе изменений в моделях SQLAlchemy:
+### Creating a New Migration
+To automatically generate a migration based on changes in SQLAlchemy models:
 ```bash
-uv run alembic revision --autogenerate -m "ваше описание"
+uv run alembic revision --autogenerate -m "your description"
 ```
 
-## Тестирование
-### Запуск всех тестов
+## Testing
+### Running All Tests
 ```bash
 uv run pytest -vv
 ```
 
 
-## Запуск приложения
+## Running the Application
 
 ```bash
 uv run uvicorn main:app --reload

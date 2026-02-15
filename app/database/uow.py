@@ -1,14 +1,30 @@
+import contextvars
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.database.repositories.order import OrderRepository
 from app.database.repositories.quote import QuoteRepository
 from app.database.repositories.outbox import OutboxRepository
 
 
-
-class UnitOfWork:
-    def __init__(self, session_factory: async_sessionmaker[AsyncSession]):
+class UnitOfWorkSqlAlchemy:
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession], session: AsyncSession):
         self.session_factory = session_factory
-        self.session: AsyncSession | None = None
+        self.ctx_session = contextvars.ContextVar("current_session", default=session)
+
+    @property
+    def session(self) -> AsyncSession:
+        return self.ctx_session.get()
+
+    @property
+    def orders(self) -> OrderRepository:
+        return OrderRepository(self.session)
+
+    @property
+    def quotes(self) -> QuoteRepository:
+        return QuoteRepository(self.session)
+
+    @property
+    def outbox(self) -> OutboxRepository:
+        return OutboxRepository(self.session)
 
     async def commit(self):
         await self.session.commit()
@@ -17,15 +33,7 @@ class UnitOfWork:
         await self.session.rollback()
 
     async def __aenter__(self):
-        self.session = self.session_factory()
-        self.orders = OrderRepository(self.session)
-        self.quotes = QuoteRepository(self.session)
-        self.outbox = OutboxRepository(self.session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        try:
-            await self.rollback()
-        finally:
-            await self.session.close()
-            self.session = None
+        await self.rollback()

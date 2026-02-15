@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 
 import httpx
@@ -10,16 +11,16 @@ from app.service.dto import (
     OrderCreateDTO,
     OrderDTO,
     OrderExecutionResult,
+    QuoteDTO,
 )
 from app.service.enums import OrderStatus, OutboxEventType as OET
 from app.service.interfaces import IUnitOfWork
 from app.service.models import Order, Quote, Outbox
+from app.service.mixins import TaskWrapperMixin
 from app.service.providers import PROVIDERS_LIST, OrderExecutionRequest, ExecutionStatus, IProvider, PROVIDERS_MAP
 
 
-
-
-class LiquidityService:
+class LiquidityService(TaskWrapperMixin):
     def __init__(self, uow: IUnitOfWork, http_client: httpx.AsyncClient):
         self.uow = uow
         self.http_client = http_client
@@ -36,7 +37,7 @@ class LiquidityService:
             incoming_account=data.incoming_account,
             outgoing_account=data.outgoing_account,
             status=OrderStatus.NEW,
-            created_at=datetime.now()
+            created_at=datetime.now(),
         )
         async with self.uow:
             self.uow.orders.add(order)
@@ -51,60 +52,24 @@ class LiquidityService:
         execute_plan = self._build_execution_plan(quotes)
 
         for quote in execute_plan:
-            request: OrderExecutionRequest = OrderExecutionRequest(
-                direction=order_dto.direction,
-                pair=order_dto.pair,
-                amount=quote.amount_in,
-                incoming_account=order_dto.incoming_account,
-                outgoing_account=order_dto.outgoing_account,
-            )
             provider_cls = PROVIDERS_MAP.get(quote.provider_name)
             try:
-                result = await provider_cls().execute(request)
-                if result["status"] is ExecutionStatus.SUCCESS:
-                    async with self.uow:
-                        await self.uow.orders.set_execution_result(
-                            OrderExecutionResult(
-                                order_id=order_id,
-                                status=OrderStatus.COMPLETED,
-                                quote_id=quote.id,
-                                provider_ref=result["provider_ref"],
-                            ),
-                        )
-                        self.uow.outbox.add(
-                            Outbox(
-                                order_id=order_id,
-                                event_type=OET.ORDER_COMPLETED,
-                                payload={},
-                            ),
-                        )
-                        await self.uow.commit()
-                        logger.info(f"Order {order_id} successfully completed via {quote.provider_name}")
-                        return
+                request = self._build_provider_request(order_dto, quote)
+                response = await provider_cls().execute(request)
+                if await self._handle_execution_response(order_id, response, quote):
+                    logger.info(f"Order {order_id} successfully completed via {quote.provider_name}")
+                    return
                 else:
-                    async with self.uow:
-                        self.uow.outbox.add(
-                            Outbox(order_id=order_id, event_type=OET.ORDER_FALLBACK, payload={}),
-                        )
-                        await self.uow.commit()
-                    logger.warning(
+                    logger.info(
                         f"Order {order_id} execution failed via {quote.provider_name} "
-                        f"with status {result['status']}. Moving to next provider...",
+                        f" {response=}."
+                        f" Moving to next provider...",
                     )
             except Exception as e:
                 logger.error(f"Error executing order {order_id} via {quote.provider_name}: {e}")
 
-        #############################################################################
-        # If we are here, it means no provider succeeded
-        async with self.uow:
-            await self.uow.orders.set_execution_result(
-                OrderExecutionResult(order_id=order_id, status=OrderStatus.FAILED),
-            )
-            self.uow.outbox.add(
-                Outbox(order_id=order_id, event_type=OET.ORDER_FAILED, payload={}),
-            )
-            await self.uow.commit()
         logger.error(f"Order {order_id} failed after trying all providers")
+        await self._set_order_failure(order_id)
 
     async def get_quote(self, data: QuoteGetDTO) -> QuoteResultDTO:
         logger.info(f"calculating quote for pair={data.pair} direction={data.direction}, amount={data.amount}")
@@ -121,23 +86,32 @@ class LiquidityService:
             fee_asset_code=incoming_asset,
         )
 
-    def _build_execution_plan(self, quotes: list[Quote], ) -> list[Quote]:
-        execute_plan = sorted(quotes, key=lambda q: q.amount_fee)
-        logger.info(f"built execute plan")  # TODO добавить деталей в лог
+    def _build_execution_plan(self, quotes: list[QuoteDTO], ) -> list[QuoteDTO]:
+        execute_plan = sorted(quotes, key=lambda q: q.fee_rate)
+        logger.info(f"built execute plan")  # TODO add details to log
         return execute_plan
-
-    async def _fetch_quotes_from_providers(self, order: OrderDTO) -> list[Quote]:
+    def _build_provider_request(self, order_dto: OrderDTO, quote: QuoteDTO) -> OrderExecutionRequest:
+        return OrderExecutionRequest(
+                direction=order_dto.direction,
+                pair=order_dto.pair,
+                amount=quote.amount_in,
+                incoming_account=order_dto.incoming_account,
+                outgoing_account=order_dto.outgoing_account,
+            )
+    async def _fetch_quotes_from_providers(self, order: OrderDTO) -> list[QuoteDTO]:
+        tasks = [
+            asyncio.create_task(self.task_wrapper(
+                self._fetch_provider_quote,order, provider_instance=provider_cls()
+            ))
+            for provider_cls in PROVIDERS_LIST
+        ]
         results = list()
-        for provider_cls in PROVIDERS_LIST:
-            try:
-                res = await self._fetch_provider_quote(order, provider_instance=provider_cls())
-                if res is not None:
-                    results.append(res)
-            except Exception as e:
-                logger.error(f"Error fetching quote from {provider_cls.__name__}: {e}")
+        async for t in asyncio.as_completed(tasks):
+            if t.exception() is None and t.result() is not None:
+                results.append(await t)
         return results
 
-    async def _fetch_provider_quote(self, order: OrderDTO, provider_instance: IProvider) -> Quote | None:
+    async def _fetch_provider_quote(self, order: OrderDTO, provider_instance: IProvider) -> QuoteDTO | None:
         try:
             res = await provider_instance.get_quote(
                 direction=order.direction,
@@ -150,7 +124,7 @@ class LiquidityService:
                 pair=res["pair"],
                 amount_in=res["amount_in"],
                 amount_out=res["amount_out"],
-                amount_fee=res["amount_in"] - res["amount_out"],  # TODO поправить на fee_rate  res["fee_rate"]
+                fee_rate=res["fee_rate"],
                 provider_name=provider_instance.__class__.__name__,
                 valid_until=res["valid_until"],
             )
@@ -159,9 +133,44 @@ class LiquidityService:
                 await self.uow.commit()
                 logger.info(
                     f"Successfully saved quote id: {quote.id} from {provider_instance.__class__.__name__} for pair {order.pair}",
-                )  # TODO добавить данных
-                return quote
+                )  # TODO add data
+                return QuoteDTO.model_validate(quote)
 
         except Exception as e:
             logger.error(f"Failed to fetch or save quote from {provider_instance.__class__.__name__}: {e}")
             raise
+
+    async def _handle_execution_response(self, order_id: int, response: dict, quote: QuoteDTO) -> bool:
+        if response["status"] is ExecutionStatus.SUCCESS:
+            order_update_data = OrderExecutionResult(
+                order_id=order_id,
+                status=OrderStatus.COMPLETED,
+                quote_id=quote.id,
+                provider_ref=response["provider_ref"],
+            )
+            outbox_record = Outbox(
+                order_id=order_id,
+                event_type=OET.ORDER_COMPLETED,
+                payload={},
+            )
+            async with self.uow:
+                await self.uow.orders.set_execution_result(order_update_data)
+                self.uow.outbox.add(outbox_record)
+                await self.uow.commit()
+                return True
+        else:
+            outbox_record = Outbox(order_id=order_id, event_type=OET.ORDER_FALLBACK, payload={})
+            async with self.uow:
+                self.uow.outbox.add(outbox_record)
+                await self.uow.commit()
+        return False
+
+    async def _set_order_failure(self, order_id: int) -> None:
+        async with self.uow:
+            await self.uow.orders.set_execution_result(
+                OrderExecutionResult(order_id=order_id, status=OrderStatus.FAILED),
+            )
+            self.uow.outbox.add(
+                Outbox(order_id=order_id, event_type=OET.ORDER_FAILED, payload={}),
+            )
+            await self.uow.commit()

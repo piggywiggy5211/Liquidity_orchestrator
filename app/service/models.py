@@ -26,7 +26,7 @@ class Quote:
     pair: str
     amount_in: Decimal
     amount_out: Decimal
-    amount_fee: Decimal
+    fee_rate: Decimal
     provider_name: str
     valid_until: datetime
     id: Optional[int] = None

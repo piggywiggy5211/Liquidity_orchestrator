@@ -63,7 +63,7 @@ class QuoteDTO(BaseDTO):
     pair: str | None = None
     amount_in: Decimal | None = None
     amount_out: Decimal | None = None
-    amount_fee: Decimal | None = None
+    fee_rate: Decimal | None = None
     provider_name: str | None = None
     valid_until: datetime | None = None
     id: int | None = None
