@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     service_fee: Decimal = Decimal("0.02")
     quote_ttl: int = 60
+    stats_window_seconds: int = 60
 
     model_config = SettingsConfigDict(
         env_file=(".env",),

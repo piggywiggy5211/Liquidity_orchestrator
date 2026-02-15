@@ -1,4 +1,5 @@
 import asyncio
+import time
 from datetime import datetime
 
 import httpx
@@ -16,11 +17,11 @@ from app.service.dto import (
 from app.service.enums import OrderStatus, OutboxEventType as OET
 from app.service.interfaces import IUnitOfWork
 from app.service.models import Order, Quote, Outbox
-from app.service.mixins import TaskWrapperMixin
+from app.service.mixins import TaskWrapperMixin, ProviderStatsMixin
 from app.service.providers import PROVIDERS_LIST, OrderExecutionRequest, ExecutionStatus, IProvider, PROVIDERS_MAP
 
 
-class LiquidityService(TaskWrapperMixin):
+class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
     def __init__(self, uow: IUnitOfWork, http_client: httpx.AsyncClient):
         self.uow = uow
         self.http_client = http_client
@@ -55,7 +56,7 @@ class LiquidityService(TaskWrapperMixin):
             provider_cls = PROVIDERS_MAP.get(quote.provider_name)
             try:
                 request = self._build_provider_request(order_dto, quote)
-                response = await provider_cls().execute(request)
+                response = await self._execute_request_by_provider(provider_cls, request)
                 if await self._handle_execution_response(order_id, response, quote):
                     logger.info(f"Order {order_id} successfully completed via {quote.provider_name}")
                     return
@@ -90,14 +91,7 @@ class LiquidityService(TaskWrapperMixin):
         execute_plan = sorted(quotes, key=lambda q: q.fee_rate)
         logger.info(f"built execute plan")  # TODO add details to log
         return execute_plan
-    def _build_provider_request(self, order_dto: OrderDTO, quote: QuoteDTO) -> OrderExecutionRequest:
-        return OrderExecutionRequest(
-                direction=order_dto.direction,
-                pair=order_dto.pair,
-                amount=quote.amount_in,
-                incoming_account=order_dto.incoming_account,
-                outgoing_account=order_dto.outgoing_account,
-            )
+
     async def _fetch_quotes_from_providers(self, order: OrderDTO) -> list[QuoteDTO]:
         tasks = [
             asyncio.create_task(self.task_wrapper(
@@ -139,6 +133,22 @@ class LiquidityService(TaskWrapperMixin):
         except Exception as e:
             logger.error(f"Failed to fetch or save quote from {provider_instance.__class__.__name__}: {e}")
             raise
+
+    def _build_provider_request(self, order_dto: OrderDTO, quote: QuoteDTO) -> OrderExecutionRequest:
+        return OrderExecutionRequest(
+            direction=order_dto.direction,
+            pair=order_dto.pair,
+            amount=quote.amount_in,
+            incoming_account=order_dto.incoming_account,
+            outgoing_account=order_dto.outgoing_account,
+        )
+
+    async def _execute_request_by_provider(self, provider_cls, request):
+        start_time = time.perf_counter()
+        response = await provider_cls().execute(request)
+        latency = time.perf_counter() - start_time
+        self.record_execution(provider_cls.__name__, latency, response["status"])
+        return response
 
     async def _handle_execution_response(self, order_id: int, response: dict, quote: QuoteDTO) -> bool:
         if response["status"] is ExecutionStatus.SUCCESS:
