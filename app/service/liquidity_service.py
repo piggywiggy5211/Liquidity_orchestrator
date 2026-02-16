@@ -213,7 +213,15 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
             outbox_record = Outbox(
                 order_id=order_id,
                 event_type=OET.ORDER_COMPLETED,
-                payload={},
+                payload={
+                    "order_id": order_id,
+                    "status": OrderStatus.COMPLETED.value,
+                    "quote_id": quote.id,
+                    "provider_ref": response["provider_ref"],
+                    "provider_name": quote.provider_name,
+                    "amount_in": float(quote.amount_in) if quote.amount_in else None,
+                    "amount_out": float(quote.amount_out) if quote.amount_out else None,
+                },
             )
             async with self.uow:
                 await self.uow.orders.set_execution_result(order_update_data)
@@ -221,7 +229,16 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
                 await self.uow.commit()
                 return True
         else:
-            outbox_record = Outbox(order_id=order_id, event_type=OET.ORDER_FALLBACK, payload={})
+            outbox_record = Outbox(
+                order_id=order_id,
+                event_type=OET.ORDER_FALLBACK,
+                payload={
+                    "order_id": order_id,
+                    "status": response["status"].value if hasattr(response["status"], "value") else str(response["status"]),
+                    "quote_id": quote.id,
+                    "provider_name": quote.provider_name,
+                }
+            )
             async with self.uow:
                 self.uow.outbox.add(outbox_record)
                 await self.uow.commit()
@@ -233,6 +250,13 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
                 OrderExecutionResult(order_id=order_id, status=OrderStatus.FAILED),
             )
             self.uow.outbox.add(
-                Outbox(order_id=order_id, event_type=OET.ORDER_FAILED, payload={}),
+                Outbox(
+                    order_id=order_id,
+                    event_type=OET.ORDER_FAILED,
+                    payload={
+                        "order_id": order_id,
+                        "status": OrderStatus.FAILED.value,
+                    },
+                ),
             )
             await self.uow.commit()
