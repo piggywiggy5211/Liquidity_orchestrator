@@ -22,11 +22,4 @@ async def calculate_quote(
     )
     result = await service.get_quote(dto)
     
-    return QuoteResponse(
-        incoming_amount=f"{result.incoming_amount:.2f}",
-        incoming_asset_code=result.incoming_asset_code,
-        outgoing_amount=f"{result.outgoing_amount:.2f}",
-        outgoing_asset_code=result.outgoing_asset_code,
-        fee_amount=f"{result.fee_amount:.2f}",
-        fee_asset_code=result.fee_asset_code,
-    )
+    return result

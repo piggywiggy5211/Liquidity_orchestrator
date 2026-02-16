@@ -28,9 +28,9 @@ class QuoteRequest(Base):
 
 
 class QuoteResponse(Base):
-    incoming_amount: str
+    incoming_amount: Decimal
     incoming_asset_code: str
-    outgoing_amount: str
+    outgoing_amount: Decimal
     outgoing_asset_code: str
-    fee_amount: str
+    fee_amount: Decimal
     fee_asset_code: str

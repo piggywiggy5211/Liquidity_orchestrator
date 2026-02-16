@@ -101,7 +101,7 @@ def test_get_quote_endpoint(client):
     })
     assert response.status_code == 200
     data = response.json()
-    assert data["incoming_amount"] == "100.00"
+    assert data["incoming_amount"] == "100.0"
     assert data["incoming_asset_code"] == "EUR"
     
     # Test with lowercase (should be case-insensitive and auto-uppercased)
@@ -112,7 +112,7 @@ def test_get_quote_endpoint(client):
     })
     assert response.status_code == 200
     data = response.json()
-    assert data["incoming_amount"] == "100.00"
+    assert data["incoming_amount"] == "100.0"
     assert data["incoming_asset_code"] == "EUR"
     assert data["outgoing_asset_code"] == "EURS"
 
