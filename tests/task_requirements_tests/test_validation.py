@@ -29,7 +29,7 @@ def test_create_order_validation_success(client, clean_db):
     assert response.status_code == 200
 
 def test_calculate_quote_validation_fail(client):
-    response = client.get("/orders/calculate-quote", params={
+    response = client.get("/calculate-quote", params={
         "direction": "on-ramp",
         "pair": "USDT-USD",
         "amount": 1000.01
@@ -38,7 +38,7 @@ def test_calculate_quote_validation_fail(client):
     assert response.json()["detail"] == "Not allowed, amount over the limit"
 
 def test_calculate_quote_validation_success(client):
-    response = client.get("/orders/calculate-quote", params={
+    response = client.get("/calculate-quote", params={
         "direction": "on-ramp",
         "pair": "USDT-USD",
         "amount": 1000.0

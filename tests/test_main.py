@@ -94,7 +94,7 @@ def test_create_order_endpoint(client, clean_db):
 
 def test_get_quote_endpoint(client):
     # Test with uppercase
-    response = client.get("/orders/calculate-quote", params={
+    response = client.get("/calculate-quote", params={
         "direction": "on-ramp",
         "pair": "EUR-EURS",
         "amount": 100.0
@@ -105,7 +105,7 @@ def test_get_quote_endpoint(client):
     assert data["incoming_asset_code"] == "EUR"
     
     # Test with lowercase (should be case-insensitive and auto-uppercased)
-    response = client.get("/orders/calculate-quote", params={
+    response = client.get("/calculate-quote", params={
         "direction": "on-ramp",
         "pair": "eur-eurs",
         "amount": 100.0

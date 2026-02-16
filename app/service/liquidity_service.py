@@ -50,6 +50,11 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
             await self.uow.commit()
             return OrderDTO.model_validate(order)
 
+    async def get_order(self, order_id: int) -> OrderDTO | None:
+        async with self.uow:
+            _, order_dto = await self.uow.orders.get(order_id)
+            return order_dto
+
     async def execute_order(self, order_id: int) -> None:
         async with self.uow:
             order_model, _ = await self.uow.orders.get(order_id)

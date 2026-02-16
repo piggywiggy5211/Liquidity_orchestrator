@@ -34,3 +34,14 @@ async def create_order(
 
     background_tasks.add_task(service.task_wrapper, service.execute_order, result.id)
     return OrderResponse(**result.model_dump())
+
+
+@router.get("/{order_id}", response_model=OrderResponse)
+async def get_order(
+        order_id: int,
+        service: LiquidityService = Depends(get_liquidity_service),
+):
+    result = await service.get_order(order_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return OrderResponse(**result.model_dump())
