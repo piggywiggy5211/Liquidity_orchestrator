@@ -35,9 +35,18 @@ class OrderResponse(Base):
     status: str
     direction: QuoteDirection
     pair: str
-    incoming_amount: Decimal
+    incoming_amount: Decimal = Field(
+        ...,
+        examples=[100,],
+    )
     incoming_account: str
-    outgoing_amount: Decimal
+    outgoing_amount: Decimal = Field(
+        ...,
+        examples=[98,],
+    )
     outgoing_account: str
-    commission_amount: Decimal
+    commission_amount: Decimal  = Field(
+        ...,
+        examples=[2,],
+    )
     created_at: datetime

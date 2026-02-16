@@ -28,9 +28,18 @@ class QuoteRequest(Base):
 
 
 class QuoteResponse(Base):
-    incoming_amount: Decimal
+    incoming_amount: Decimal = Field(
+        ...,
+        examples=[100,],
+    )
     incoming_asset_code: str
-    outgoing_amount: Decimal
+    outgoing_amount: Decimal = Field(
+        ...,
+        examples=[98,],
+    )
     outgoing_asset_code: str
-    fee_amount: Decimal
+    fee_amount: Decimal = Field(
+        ...,
+        examples=[2,],
+    )
     fee_asset_code: str

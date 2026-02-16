@@ -19,9 +19,9 @@ async def test_provider_stats_mixin_logic(db_session, session_factory, clean_db)
     service = LiquidityService(uow, AsyncMock())
     
     # Test recording stats directly first to verify mixin logic
-    service.record_execution("ProviderA", 0.1, ExecutionStatus.SUCCESS)
-    service.record_execution("ProviderA", 0.2, ExecutionStatus.TIMEOUT)
-    service.record_execution("ProviderB", 0.5, ExecutionStatus.SUCCESS)
+    service._record_execution("ProviderA", 0.1, ExecutionStatus.SUCCESS)
+    service._record_execution("ProviderA", 0.2, ExecutionStatus.TIMEOUT)
+    service._record_execution("ProviderB", 0.5, ExecutionStatus.SUCCESS)
     
     assert service.average_latency["ProviderA"] == pytest.approx(0.1)
     assert service.average_latency["ProviderB"] == pytest.approx(0.5)
@@ -38,11 +38,11 @@ async def test_provider_stats_moving_window(db_session, session_factory, clean_d
         start_t = 1000.0
         mock_time.return_value = start_t
         
-        service.record_execution("ProviderA", 0.1, ExecutionStatus.SUCCESS)
+        service._record_execution("ProviderA", 0.1, ExecutionStatus.SUCCESS)
         
         # Move time forward by 30 seconds
         mock_time.return_value = start_t + 30.0
-        service.record_execution("ProviderA", 0.2, ExecutionStatus.SUCCESS)
+        service._record_execution("ProviderA", 0.2, ExecutionStatus.SUCCESS)
         
         # Move time forward by another 40 seconds (total 70s from start)
         # First record should be cleaned up (window is 60s)

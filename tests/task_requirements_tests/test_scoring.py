@@ -41,7 +41,7 @@ def test_scoring_logic_ranking(service):
         mock_lat.return_value = mock_latency
         mock_tout.return_value = mock_timeouts
         
-        plan = service._build_execution_plan(quotes)
+        plan = service._build_execution_plan(quotes, order_id=111)
         
         # Score calculation (Weights: fee=0.4, latency=0.1, timeout=0.5):
         # fee_rate score: A:10, B:5.737, C:1
@@ -72,7 +72,7 @@ def test_scoring_identical_values(service):
         mock_lat.return_value = mock_latency
         mock_tout.return_value = mock_timeouts
         
-        plan = service._build_execution_plan(quotes)
+        plan = service._build_execution_plan(quotes, order_id=111)
         assert len(plan) == 2
         # When everything is identical, order doesn't matter
         assert {p.provider_name for p in plan} == {"P1", "P2"}

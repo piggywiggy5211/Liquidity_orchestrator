@@ -32,7 +32,6 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
         return amount <= settings.max_order_amount
 
     async def create_order(self, data: OrderCreateDTO) -> OrderDTO:
-        logger.info(f"Creating order for amount {data.amount} pair {data.pair}")
         commission_amount = data.amount * settings.service_fee
         target_amount_out = data.amount - commission_amount
         order = Order(
@@ -56,14 +55,16 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
             return order_dto
 
     async def execute_order(self, order_id: int) -> None:
+        logger.info(f"Executing order_id {order_id}")
         async with self.uow:
             order_model, _ = await self.uow.orders.get(order_id)
             order_model.status = OrderStatus.PROCESSING
             await self.uow.commit()
             order_dto = OrderDTO.model_validate(order_model)
 
+        logger.info(f"Changed order_id {order_dto.id} status to {order_dto.status}")
         quotes = await self._fetch_quotes_from_providers(order_dto)
-        execute_plan = self._build_execution_plan(quotes)
+        execute_plan = self._build_execution_plan(quotes, order_dto.id)
 
         for quote in execute_plan:
             provider_cls = PROVIDERS_MAP.get(quote.provider_name)
@@ -74,19 +75,18 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
                     logger.info(f"Order {order_id} successfully completed via {quote.provider_name}")
                     return
                 else:
-                    logger.info(
+                    logger.warning(
                         f"Order {order_id} execution failed via {quote.provider_name} "
                         f" {response=}."
                         f" Moving to next provider...",
                     )
             except Exception as e:
-                logger.error(f"Error executing order {order_id} via {quote.provider_name}: {e}")
+                logger.warning(f"Error executing order {order_id} via {quote.provider_name}: {e}")
 
-        logger.error(f"Order {order_id} failed after trying all providers")
+        logger.warning(f"Order {order_id} failed after trying all providers")
         await self._set_order_failure(order_id)
 
     async def get_quote(self, data: QuoteGetDTO) -> QuoteResultDTO:
-        logger.info(f"calculating quote for pair={data.pair} direction={data.direction}, amount={data.amount}")
         incoming_asset, outgoing_asset, *_ = data.pair.split("-")
         fee_amount = data.amount * settings.service_fee
         outgoing_amount = data.amount - fee_amount
@@ -100,8 +100,10 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
             fee_asset_code=incoming_asset,
         )
 
-    def _build_execution_plan(self, quotes: list[QuoteDTO], ) -> list[QuoteDTO]:
+    def _build_execution_plan(self, quotes: list[QuoteDTO], order_id: int) -> list[QuoteDTO]:
+        logger.info(f"Building execution plan for order_id {order_id}")
         if not quotes:
+            logger.warning(f"No quotes available for order_id {order_id}")
             return []
 
         # Prepare data for scoring
@@ -147,10 +149,21 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
         # Sort by final score descending
         df = df.sort_values("final_score", ascending=False)
 
-        logger.info(f"Built execution plan with scores:\n{df[['fee_rate', 'latency', 'timeout', 'final_score']]}")
+        for index, row in df.iterrows():
+            logger.info(
+                f"Calculated score for quote_id {row['quote'].id},"
+                f" provider_name {row['quote'].provider_name},"
+                f" final_score {row['final_score']}"
+                "("
+                f" fee_rate {row['fee_rate']},"
+                f" latency {row['latency']},"
+                f" timeout {row['timeout']}"
+                ")"
+            )
         return df["quote"].tolist()
 
     async def _fetch_quotes_from_providers(self, order: OrderDTO) -> list[QuoteDTO]:
+        logger.info(f"Fetching quotes for order {order.id}")
         tasks = [
             asyncio.create_task(
                 self.task_wrapper(
@@ -163,6 +176,7 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
         async for t in asyncio.as_completed(tasks):
             if t.exception() is None and t.result() is not None:
                 results.append(await t)
+        logger.info(f"Fetched {len(results)} quotes for order_id {order.id}")
         return results
 
     async def _fetch_provider_quote(self, order: OrderDTO, provider_instance: IProvider) -> QuoteDTO | None:
@@ -186,12 +200,16 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
                 self.uow.quotes.add(quote)
                 await self.uow.commit()
                 logger.info(
-                    f"Successfully saved quote id: {quote.id} from {provider_instance.__class__.__name__} for pair {order.pair}",
-                )  # TODO add data
+                    f"Successfully saved quote id: {quote.id} from {provider_instance.__class__.__name__}"
+                    f" for order_id {order.id}",
+                )
                 return QuoteDTO.model_validate(quote)
 
         except Exception as e:
-            logger.error(f"Failed to fetch or save quote from {provider_instance.__class__.__name__}: {e}")
+            logger.warning(
+                f"Failed to fetch or save quote from {provider_instance.__class__.__name__}"
+                f" for order_id {order.id}: {e}",
+            )
             raise
 
     def _build_provider_request(self, order_dto: OrderDTO, quote: QuoteDTO) -> OrderExecutionRequest:
@@ -205,9 +223,10 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
 
     async def _execute_request_by_provider(self, provider_cls, request):
         start_time = time.perf_counter()
+        logger.info(f"Send request for provider {provider_cls.__name__}")
         response = await provider_cls().execute(request)
         latency = time.perf_counter() - start_time
-        self.record_execution(provider_cls.__name__, latency, response["status"])
+        self._record_execution(provider_cls.__name__, latency, response["status"])
         return response
 
     async def _handle_execution_response(self, order_id: int, response: dict, quote: QuoteDTO) -> bool:
@@ -245,7 +264,7 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
                     "status": response["status"].value,
                     "quote_id": quote.id,
                     "provider_name": quote.provider_name,
-                }
+                },
             )
             async with self.uow:
                 self.uow.outbox.add(outbox_record)

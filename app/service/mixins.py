@@ -22,7 +22,7 @@ class TaskWrapperMixin:
 class ProviderStatsMixin:
     _stats: dict[str, dict[str, list]] = defaultdict(lambda: {"latency": [], "availability": []})
 
-    def record_execution(self, provider_name: str, latency: float, status: ExecutionStatus):
+    def _record_execution(self, provider_name: str, latency: float, status: ExecutionStatus):
         now = time.time()
         is_timeout = status == ExecutionStatus.TIMEOUT
         if not is_timeout:
