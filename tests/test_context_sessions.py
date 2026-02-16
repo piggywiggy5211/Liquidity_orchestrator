@@ -12,10 +12,10 @@ async def test_context_session_isolation(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     service = LiquidityService(uow, AsyncMock())
 
-    main_session_id = id(uow.session)
+    main_session_id = id(uow._session)
     
     async def get_session_id():
-        return id(uow.session)
+        return id(uow._session)
 
     # Execute via task_wrapper
     task_session_id = await service.task_wrapper(get_session_id)
@@ -24,7 +24,7 @@ async def test_context_session_isolation(db_session, session_factory):
     assert task_session_id != main_session_id
     
     # Verify main session is restored
-    assert id(uow.session) == main_session_id
+    assert id(uow._session) == main_session_id
 
 @pytest.mark.asyncio
 async def test_parallel_context_sessions(db_session, session_factory):
@@ -35,11 +35,11 @@ async def test_parallel_context_sessions(db_session, session_factory):
     service = LiquidityService(uow, AsyncMock())
 
     async def delayed_session_id():
-        s_id = id(uow.session)
+        s_id = id(uow._session)
         # Sleep to ensure overlap in execution
         await asyncio.sleep(0.05)
         # Verify session is still the same after sleep (no leakage from other tasks)
-        assert id(uow.session) == s_id
+        assert id(uow._session) == s_id
         return s_id
 
     # Run 5 tasks in parallel
@@ -60,19 +60,19 @@ async def test_nested_context_sessions(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     service = LiquidityService(uow, AsyncMock())
 
-    main_session_id = id(uow.session)
+    main_session_id = id(uow._session)
 
     async def inner_task():
-        return id(uow.session)
+        return id(uow._session)
 
     async def outer_task():
-        outer_id = id(uow.session)
+        outer_id = id(uow._session)
         inner_id = await service.task_wrapper(inner_task)
         assert inner_id != outer_id
-        assert id(uow.session) == outer_id
+        assert id(uow._session) == outer_id
         return outer_id
 
     outer_session_id = await service.task_wrapper(outer_task)
     
     assert outer_session_id != main_session_id
-    assert id(uow.session) == main_session_id
+    assert id(uow._session) == main_session_id

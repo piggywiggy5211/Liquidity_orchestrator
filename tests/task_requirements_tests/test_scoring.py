@@ -9,9 +9,9 @@ def service():
     return LiquidityService(uow=MagicMock(), http_client=MagicMock())
 
 def test_scoring_logic_ranking(service):
-    # ProviderA: лучший курс, но часто timeout (скажем 20%)
-    # ProviderB: средний курс, почти всегда работает
-    # ProviderC: хуже курс, но низкая latency
+    # ProviderA: best rate, but frequent timeout 20%
+    # ProviderB: medium rate, almost always works
+    # ProviderC: worse rate, but low latency
     
     quotes = [
         QuoteDTO(provider_name="ProviderA", fee_rate=Decimal("0.001"), amount_in=Decimal("100")),
@@ -19,7 +19,7 @@ def test_scoring_logic_ranking(service):
         QuoteDTO(provider_name="ProviderC", fee_rate=Decimal("0.02"), amount_in=Decimal("100")),
     ]
     
-    # Метрики
+    # Metrics
     # ProviderA: fee=0.001 (min), latency=0.5 (max), timeout=20.0 (max)
     # ProviderB: fee=0.01 (mid), latency=0.5 (max), timeout=0.0 (min)
     # ProviderC: fee=0.02 (max), latency=0.1 (min), timeout=0.0 (min)
@@ -43,7 +43,7 @@ def test_scoring_logic_ranking(service):
         
         plan = service._build_execution_plan(quotes)
         
-        # Расчет баллов (Weights: fee=0.4, latency=0.1, timeout=0.5):
+        # Score calculation (Weights: fee=0.4, latency=0.1, timeout=0.5):
         # fee_rate score: A:10, B:5.737, C:1
         # latency score: A:1, B:1, C:10
         # timeout score: A:1, B:10, C:10
@@ -52,7 +52,7 @@ def test_scoring_logic_ranking(service):
         # ProviderB: 5.737*0.4 + 1*0.1 + 10*0.5 = 2.295 + 0.1 + 5.0 = 7.395
         # ProviderC: 1*0.4 + 10*0.1 + 10*0.5 = 0.4 + 1.0 + 5.0 = 6.4
         
-        # Ожидаемый порядок: ProviderB, ProviderC, ProviderA
+        # Expected order: ProviderB, ProviderC, ProviderA
         assert plan[0].provider_name == "ProviderB"
         assert plan[1].provider_name == "ProviderC"
         assert plan[2].provider_name == "ProviderA"
@@ -74,5 +74,5 @@ def test_scoring_identical_values(service):
         
         plan = service._build_execution_plan(quotes)
         assert len(plan) == 2
-        # Когда всё одинаково, порядок не важен
+        # When everything is identical, order doesn't matter
         assert {p.provider_name for p in plan} == {"P1", "P2"}

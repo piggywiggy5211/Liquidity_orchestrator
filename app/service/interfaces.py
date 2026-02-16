@@ -1,4 +1,5 @@
-from typing import Protocol, Optional, Sequence
+from contextvars import ContextVar
+from typing import Protocol, Optional, Sequence, Callable, AsyncContextManager
 
 from app.service.dto import OrderExecutionResult, OrderDTO, QuoteDTO, OutboxDTO
 from app.service.models import Order, Quote, Outbox
@@ -19,6 +20,9 @@ class IRepositoryOrder(IRepository[Order, OrderDTO]):
 
 
 class IUnitOfWork(Protocol):
+    session_factory: Callable[[], AsyncContextManager]
+    ctx_session: ContextVar
+
     orders: IRepositoryOrder
     quotes: IRepository[Quote, QuoteDTO]
     outbox: IRepository[Outbox, OutboxDTO]

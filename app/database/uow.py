@@ -1,4 +1,5 @@
 import contextvars
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.database.repositories.order import OrderRepository
 from app.database.repositories.quote import QuoteRepository
@@ -11,26 +12,26 @@ class UnitOfWorkSqlAlchemy:
         self.ctx_session = contextvars.ContextVar("current_session", default=session)
 
     @property
-    def session(self) -> AsyncSession:
+    def _session(self) -> AsyncSession:
         return self.ctx_session.get()
 
     @property
     def orders(self) -> OrderRepository:
-        return OrderRepository(self.session)
+        return OrderRepository(self._session)
 
     @property
     def quotes(self) -> QuoteRepository:
-        return QuoteRepository(self.session)
+        return QuoteRepository(self._session)
 
     @property
     def outbox(self) -> OutboxRepository:
-        return OutboxRepository(self.session)
+        return OutboxRepository(self._session)
 
     async def commit(self):
-        await self.session.commit()
+        await self._session.commit()
 
     async def rollback(self):
-        await self.session.rollback()
+        await self._session.rollback()
 
     async def __aenter__(self):
         return self

@@ -3,10 +3,13 @@ from collections import defaultdict
 import time
 from typing import Callable, Any, Dict
 from app.core.config import settings
+from app.service.interfaces import IUnitOfWork
 from app.service.providers import ExecutionStatus
 
 
 class TaskWrapperMixin:
+    uow: IUnitOfWork
+
     async def task_wrapper(self, func: Callable, *args: Any, **kwargs: Any) -> Any:
         async with self.uow.session_factory() as session:
             token = self.uow.ctx_session.set(session)
@@ -62,4 +65,3 @@ class ProviderStatsMixin:
             timeouts = sum(1 for r in records if r[1] is True)
             result[provider] = (timeouts / len(records)) * 100
         return result
-

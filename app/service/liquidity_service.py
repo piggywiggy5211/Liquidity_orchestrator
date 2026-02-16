@@ -52,7 +52,10 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
 
     async def execute_order(self, order_id: int) -> None:
         async with self.uow:
-            _, order_dto = await self.uow.orders.get(order_id)
+            order_model, _ = await self.uow.orders.get(order_id)
+            order_model.status = OrderStatus.PROCESSING
+            await self.uow.commit()
+            order_dto = OrderDTO.model_validate(order_model)
 
         quotes = await self._fetch_quotes_from_providers(order_dto)
         execute_plan = self._build_execution_plan(quotes)
@@ -234,7 +237,7 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
                 event_type=OET.ORDER_FALLBACK,
                 payload={
                     "order_id": order_id,
-                    "status": response["status"].value if hasattr(response["status"], "value") else str(response["status"]),
+                    "status": response["status"].value,
                     "quote_id": quote.id,
                     "provider_name": quote.provider_name,
                 }

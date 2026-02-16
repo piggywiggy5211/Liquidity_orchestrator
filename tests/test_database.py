@@ -24,7 +24,7 @@ async def test_uow_order_creation(db_session, session_factory, clean_db):
             status=OrderStatus.NEW,
         )
         uow.orders.add(order)
-        await uow.session.flush()  # Populate ID
+        await uow._session.flush()  # Populate ID
         order_id = order.id
         await uow.commit()
 
@@ -61,7 +61,7 @@ async def test_uow_quote_and_outbox(db_session, session_factory, clean_db):
             status=OrderStatus.COMPLETED,
         )
         uow.orders.add(order)
-        await uow.session.flush()  # to get order.id
+        await uow._session.flush()  # to get order.id
 
         uow.outbox.add(Outbox(
             order_id=order.id,

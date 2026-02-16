@@ -3,6 +3,7 @@ from enum import Enum
 
 class OrderStatus(str, Enum):
     NEW = "NEW"
+    PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 

@@ -36,3 +36,5 @@ uv run pytest -vv
 ```bash
 uv run python -m app.main
 ```
+2.Fallback: лучший провайдер падает → берётся следующий, order completed
+3.Execute race: 2 concurrent execute → 1 набор, консистентный статус
