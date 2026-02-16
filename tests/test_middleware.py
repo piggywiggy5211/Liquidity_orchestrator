@@ -11,7 +11,7 @@ def test_request_response_logging(capsys):
             "incoming_account": "acct-1",
             "outgoing_account": "acct-2"
         }
-        response = client.post("/orders", json=payload)
+        response = client.post("/orders", json=payload, headers={"X-Api-Ts": "12345"})
         
         assert response.status_code == 200
     
@@ -42,7 +42,7 @@ def test_request_response_logging_with_iban(capsys):
             "incoming_account": "acct-1",
             "outgoing_account": iban
         }
-        client.post("/orders", json=payload)
+        client.post("/orders", json=payload, headers={"X-Api-Ts": "12345"})
     
     captured = capsys.readouterr().out
     assert "DE12****7890" in captured

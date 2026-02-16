@@ -13,7 +13,7 @@ async def calculate_quote(
         service: LiquidityService = Depends(get_liquidity_service),
 ):
     if not service.validate_sum(data.amount):
-        raise HTTPException(status_code=400, detail="Not allowed, amount over the limit")
+        raise HTTPException(status_code=422, detail="Not allowed, amount over the limit")
 
     dto = QuoteGetDTO(
         direction=data.direction,

@@ -84,7 +84,7 @@ def test_create_order_endpoint(client, clean_db):
             "amount": 100.0,
             "incoming_account": "acct-1",
             "outgoing_account": "acct-2"
-        })
+        }, headers={"X-Api-Ts": "12345"})
         assert response.status_code == 200
         data = response.json()
         assert "id" in data

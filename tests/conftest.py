@@ -11,8 +11,14 @@ if str(ROOT) not in sys.path:
 
 from app.database.models import map_models_sqlalchemy, metadata
 from app.database.db_helper import db_helper
+from app.api.deps import IDEMPOTENCY_SET
 
 from unittest.mock import AsyncMock, patch
+
+@pytest.fixture(autouse=True)
+def clear_idempotency_set():
+    IDEMPOTENCY_SET.clear()
+    yield
 
 @pytest.fixture(autouse=True)
 def mock_asyncio_sleep():
