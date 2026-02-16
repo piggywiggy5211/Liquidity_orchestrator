@@ -1,8 +1,8 @@
-"""init
+"""first
 
-Revision ID: 5ba04ebd1cb4
+Revision ID: da194b9f0f41
 Revises: 
-Create Date: 2026-02-14 17:13:56.081633
+Create Date: 2026-02-16 20:28:49.791871
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '5ba04ebd1cb4'
+revision: str = 'da194b9f0f41'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -30,8 +30,7 @@ def upgrade() -> None:
     sa.Column('direction', sa.Enum('ON_RAMP', 'OFF_RAMP', name='quotedirection', native_enum=False), nullable=False),
     sa.Column('pair', sa.String(), nullable=False),
     sa.Column('quote_id', sa.String(), nullable=True),
-    sa.Column('status', sa.Enum('NEW', 'COMPLETED', 'FAILED', name='orderstatus', native_enum=False), server_default='NEW', nullable=False),
-    sa.Column('provider_name', sa.String(), nullable=True),
+    sa.Column('status', sa.Enum('NEW', 'PROCESSING', 'COMPLETED', 'FAILED', name='orderstatus', native_enum=False), server_default='NEW', nullable=False),
     sa.Column('provider_ref', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
@@ -44,7 +43,7 @@ def upgrade() -> None:
     sa.Column('pair', sa.String(), nullable=False),
     sa.Column('amount_in', sa.Numeric(precision=20, scale=8), nullable=False),
     sa.Column('amount_out', sa.Numeric(precision=20, scale=8), nullable=False),
-    sa.Column('amount_fee', sa.Numeric(precision=20, scale=8), nullable=False),
+    sa.Column('fee_rate', sa.Numeric(precision=20, scale=8), nullable=False),
     sa.Column('provider_name', sa.String(), nullable=False),
     sa.Column('valid_until', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')
