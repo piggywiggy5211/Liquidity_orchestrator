@@ -1,15 +1,16 @@
 import random
 import asyncio
 import uuid
-from typing import Protocol, Any, Optional
-from abc import ABC, abstractmethod
+from typing import Protocol, Any, Callable
+from abc import ABC
 from decimal import Decimal
 from enum import Enum
 from datetime import datetime, timedelta
-from cachetools import TTLCache, cachedmethod
+from cachetools import TTLCache, keys
 from pydantic import BaseModel, Field
 from app.service.enums import QuoteDirection
 from app.core.config import settings
+from functools import wraps
 
 class ExecutionStatus(str, Enum):
     SUCCESS = "success"
@@ -27,6 +28,24 @@ class OrderExecutionRequest(BaseModel):
     amount: Decimal
     incoming_account: str
     outgoing_account: str
+
+
+def async_cachedmethod(get_cache: Callable):
+    def dec(method):
+        @wraps(method)
+        async def memoized_async_method(self: BaseProvider, *args, **kwargs):
+            cache = get_cache(self)
+            key = keys.hashkey(self.__class__.__name__, *args, **kwargs)
+            if key in cache:
+                return cache[key]
+            result = await method(self, *args, **kwargs)
+            cache[key] = result
+            return result
+
+        return memoized_async_method
+
+    return dec
+
 
 class IProvider(Protocol):
     async def get_quote(
@@ -59,7 +78,7 @@ class BaseProvider(ABC):
     def __init__(self):
         self._cache = TTLCache(maxsize=1024, ttl=settings.quote_ttl)
 
-    @cachedmethod(cache=lambda self: self._cache)
+    @async_cachedmethod(get_cache=lambda self: self._cache)
     async def get_quote(
         self, 
         direction: QuoteDirection, 
@@ -79,7 +98,7 @@ class BaseProvider(ABC):
             raise ValueError("Either amount_in or amount_out must be provided")
 
         valid_until = datetime.now() + timedelta(seconds=settings.quote_ttl)
-
+        await asyncio.sleep(0)
         return {
             "pair": pair,
             "direction": direction,
