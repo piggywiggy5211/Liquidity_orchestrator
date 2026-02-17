@@ -7,7 +7,11 @@ from app.service.models import Order, Quote, Outbox
 
 def map_models_sqlalchemy():
     if not mapper_registry.mappers:
-        mapper_registry.map_imperatively(Order, orders_table)
+        mapper_registry.map_imperatively(
+            Order, 
+            orders_table,
+            version_id_col=orders_table.c.version
+        )
         mapper_registry.map_imperatively(Quote, quotes_table)
         mapper_registry.map_imperatively(Outbox, outbox_table)
         configure_mappers()

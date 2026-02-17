@@ -49,6 +49,7 @@ class OrderDTO(BaseDTO):
     outgoing_amount: Decimal | None = None
     outgoing_account: str | None = None
     created_at: datetime | None = None
+    version: int = 0
 
     @computed_field
     @property

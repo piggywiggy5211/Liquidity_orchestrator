@@ -18,6 +18,7 @@ class Order:
     status: OrderStatus = OrderStatus.NEW
     provider_ref: Optional[str] = None
     updated_at: Optional[datetime] = None
+    version: int = 0
 
 
 @dataclass

@@ -1,6 +1,9 @@
 import contextvars
 
+from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.orm.exc import StaleDataError
+
 from app.database.repositories.order import OrderRepository
 from app.database.repositories.quote import QuoteRepository
 from app.database.repositories.outbox import OutboxRepository
@@ -28,7 +31,11 @@ class UnitOfWorkSqlAlchemy:
         return OutboxRepository(self._session)
 
     async def commit(self):
-        await self._session.commit()
+        try:
+            await self._session.commit()
+        except StaleDataError:
+            logger.error(f"it was updated by another process")
+            raise
 
     async def rollback(self):
         await self._session.rollback()

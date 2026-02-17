@@ -6,6 +6,7 @@ from decimal import Decimal
 import httpx
 import pandas as pd
 from loguru import logger
+from sqlalchemy.orm.exc import StaleDataError
 
 from app.core.config import settings
 from app.service.dto import (

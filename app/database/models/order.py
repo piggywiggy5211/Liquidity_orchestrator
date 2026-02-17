@@ -21,6 +21,7 @@ orders_table = Table(
         nullable=False
     ),
     Column("provider_ref", String, nullable=True),
+    Column("version", Integer, server_default="0", nullable=False),
     Column("created_at", DateTime, server_default=func.now(), nullable=False),
     Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now(), nullable=False),
 )
