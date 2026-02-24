@@ -1,35 +1,36 @@
-from contextvars import ContextVar
-from typing import Protocol, Optional, Sequence, Callable, AsyncContextManager
+from typing import Any, Callable, Optional, Protocol, Sequence
 
-from app.service.dto import OrderExecutionResult, OrderDTO, QuoteDTO, OutboxDTO
-from app.service.models import Order, Quote, Outbox
-
-
-class IRepository[M, D](Protocol):
-    async def get(self, id: int) -> tuple[Optional[M], Optional[D]]: ...
-
-    async def get_all(self) -> tuple[Sequence[M], Sequence[D]]: ...
-
-    def add(self, instance: M) -> None: ...
-
-    async def delete(self, instance: M) -> None: ...
+from app.service.dto import OrderExecutionResult
+from app.service.models import Order, Outbox, Quote
 
 
-class IRepositoryOrder(IRepository[Order, OrderDTO]):
+class IRepository[ModelType](Protocol):
+    async def get(self, record_id: int) -> Optional[ModelType]: ...
+
+    async def get_all(self) -> Sequence[ModelType]: ...
+
+    def add(self, instance: ModelType) -> None: ...
+
+    async def delete(self, instance: ModelType) -> None: ...
+
+
+class IRepositoryOrder(IRepository[Order]):
     async def set_execution_result(self, data: OrderExecutionResult) -> None: ...
 
 
 class IUnitOfWork(Protocol):
-    session_factory: Callable[[], AsyncContextManager]
-    ctx_session: ContextVar
-
-    orders: IRepositoryOrder
-    quotes: IRepository[Quote, QuoteDTO]
-    outbox: IRepository[Outbox, OutboxDTO]
+    @property
+    def orders(self) -> IRepositoryOrder: ...
+    @property
+    def quotes(self) -> IRepository[Quote]: ...
+    @property
+    def outbox(self) -> IRepository[Outbox]: ...
 
     async def commit(self) -> None: ...
 
     async def rollback(self) -> None: ...
+
+    async def switch_session_context_for_task(self, func: Callable, *args: Any, **kwargs: Any) -> Any: ...
 
     async def __aenter__(self) -> "IUnitOfWork": ...
 

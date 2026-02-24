@@ -3,4 +3,6 @@
 .ai/
 test.db
 .output.txt
+GEMINI.md
+__pycache__/
 

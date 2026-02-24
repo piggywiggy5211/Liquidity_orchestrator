@@ -1,6 +1,5 @@
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
-from typing import Callable
+from typing import AsyncGenerator, Callable
 
 from loguru import logger
 from opentelemetry import trace
@@ -28,6 +27,7 @@ async def trace_id_context_logged() -> AsyncGenerator[None, None]:
     span_id = get_current_span_id()
     with logger.contextualize(trace_id=trace_id, span_id=span_id):
         yield
+
 
 class LoggerContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:

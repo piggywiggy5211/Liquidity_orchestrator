@@ -1,5 +1,6 @@
 from .base import BaseProvider
 
+
 class ProviderC(BaseProvider):
     fee_min = 0.01
     fee_max = 0.015

@@ -5,17 +5,16 @@ Revises: da194b9f0f41
 Create Date: 2026-02-18 00:28:49.014496
 
 """
-from typing import Sequence, Union
 
-from alembic import op
-import sqlalchemy as sa
+from typing import Sequence, Union
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'ef1032426cb4'
-down_revision: Union[str, Sequence[str], None] = 'da194b9f0f41'
+revision: str = "ef1032426cb4"
+down_revision: Union[str, Sequence[str], None] = "da194b9f0f41"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
+
 
 def upgrade() -> None:
     """Upgrade schema."""

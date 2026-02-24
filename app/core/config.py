@@ -1,9 +1,10 @@
-from pathlib import Path
 from decimal import Decimal
+from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 BASE_DIR = Path(__file__).parent.parent.parent
 
@@ -31,10 +32,10 @@ class LoggingConfig(BaseModel):
     ] = "info"
     debug: bool = True
 
-
     @property
     def log_level_value(self) -> str:
         return self.log_level.upper()
+
 
 class Settings(BaseSettings):
     db: DatabaseConfig = DatabaseConfig()
@@ -51,5 +52,6 @@ class Settings(BaseSettings):
         case_sensitive=False,
         env_nested_delimiter="__",
     )
+
 
 settings = Settings()

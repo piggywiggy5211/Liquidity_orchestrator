@@ -1,15 +1,18 @@
 from datetime import datetime
+
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.service.interfaces import IRepositoryOrder
 from app.service.models import Order
+
+from ...service.dto import OrderExecutionResult
 from .base import BaseRepository
-from ...service.dto import OrderExecutionResult, OrderDTO
 
 
-class OrderRepository(BaseRepository[Order, OrderDTO]):
+class OrderRepository(BaseRepository[Order], IRepositoryOrder):
     def __init__(self, session: AsyncSession):
-        super().__init__(Order, OrderDTO, session)
+        super().__init__(Order, session)
 
     async def set_execution_result(self, data: OrderExecutionResult) -> None:
         update_values = {
@@ -21,10 +24,9 @@ class OrderRepository(BaseRepository[Order, OrderDTO]):
         if data.provider_ref:
             update_values["provider_ref"] = data.provider_ref
 
-
         stmt = (
             update(self.model)
-            .where(self.model.id == data.order_id)
+            .where(self.model.id == data.order_id)  # type: ignore[arg-type]
             .values(**update_values)
             .execution_options(synchronize_session="fetch")
         )

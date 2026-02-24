@@ -1,16 +1,19 @@
-import random
 import asyncio
+import random
 import uuid
-from typing import Protocol, Any, Callable
 from abc import ABC
+from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
-from datetime import datetime, timedelta
+from functools import wraps
+from typing import Any, Callable, Protocol
+
 from cachetools import TTLCache, keys
 from pydantic import BaseModel, Field
-from app.service.enums import QuoteDirection
+
 from app.core.config import settings
-from functools import wraps
+from app.service.enums import QuoteDirection
+
 
 class ExecutionStatus(str, Enum):
     SUCCESS = "success"
@@ -21,9 +24,9 @@ class ExecutionStatus(str, Enum):
 class OrderExecutionRequest(BaseModel):
     direction: QuoteDirection
     pair: str = Field(
-        ..., 
-        pattern=r"^[a-zA-Z]+-[a-zA-Z]+$", 
-        description="Asset pair in format 'USDT-USD'"
+        ...,
+        pattern=r"^[a-zA-Z]+-[a-zA-Z]+$",
+        description="Asset pair in format 'USDT-USD'",
     )
     amount: Decimal
     incoming_account: str
@@ -49,14 +52,15 @@ def async_cachedmethod(get_cache: Callable):
 
 class IProvider(Protocol):
     async def get_quote(
-        self, 
-        direction: QuoteDirection, 
-        pair: str, 
-        amount_in: Decimal | None = None, 
-        amount_out: Decimal | None = None
+        self,
+        direction: QuoteDirection,
+        pair: str,
+        amount_in: Decimal | None = None,
+        amount_out: Decimal | None = None,
     ) -> dict[str, Any]: ...
 
     async def execute(self, order: OrderExecutionRequest) -> dict: ...
+
 
 class BaseProvider(ABC):
     # Provider settings to be defined in subclasses
@@ -80,14 +84,14 @@ class BaseProvider(ABC):
 
     @async_cachedmethod(get_cache=lambda self: self._cache)
     async def get_quote(
-        self, 
-        direction: QuoteDirection, 
-        pair: str, 
-        amount_in: Decimal | None = None, 
-        amount_out: Decimal | None = None
+        self,
+        direction: QuoteDirection,
+        pair: str,
+        amount_in: Decimal | None = None,
+        amount_out: Decimal | None = None,
     ) -> dict[str, Any]:
         fee_rate = Decimal(str(random.uniform(self.fee_min, self.fee_max)))
-        
+
         if amount_in is not None:
             calc_amount_out = amount_in * (Decimal("1") - fee_rate)
             calc_amount_in = amount_in
@@ -105,13 +109,13 @@ class BaseProvider(ABC):
             "amount_in": calc_amount_in,
             "amount_out": calc_amount_out,
             "fee_rate": fee_rate,
-            "valid_until": valid_until
+            "valid_until": valid_until,
         }
 
     async def execute(self, order: OrderExecutionRequest) -> dict:
         latency = random.uniform(self.latency_min, self.latency_max)
         await asyncio.sleep(latency)
-        
+
         rand = random.random()
         if rand < self.fail_prob:
             status = ExecutionStatus.FAIL
@@ -122,5 +126,5 @@ class BaseProvider(ABC):
 
         return {
             "status": status,
-            "provider_ref": f"ref-{self.ref_prefix}-{uuid.uuid4().hex[:8]}"
+            "provider_ref": f"ref-{self.ref_prefix}-{uuid.uuid4().hex[:8]}",
         }

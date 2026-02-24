@@ -12,6 +12,7 @@ from app.database.db_helper import db_helper
 from app.database.models import map_models_sqlalchemy
 from app.router import api_router
 
+
 setup_logger()
 map_models_sqlalchemy()
 

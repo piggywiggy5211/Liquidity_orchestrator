@@ -12,6 +12,7 @@ if __name__ == "__main__":
     setup_logger()
 
     import logging
+
     from loguru import logger
 
     logger.info("Hello World!")

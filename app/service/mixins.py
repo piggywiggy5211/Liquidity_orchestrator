@@ -1,22 +1,9 @@
+import time
 from bisect import bisect_left
 from collections import defaultdict
-import time
-from typing import Callable, Any, Dict
+
 from app.core.config import settings
-from app.service.interfaces import IUnitOfWork
 from app.service.providers import ExecutionStatus
-
-
-class TaskWrapperMixin:
-    uow: IUnitOfWork
-
-    async def task_wrapper(self, func: Callable, *args: Any, **kwargs: Any) -> Any:
-        async with self.uow.session_factory() as session:
-            token = self.uow.ctx_session.set(session)
-            try:
-                return await func(*args, **kwargs)
-            finally:
-                self.uow.ctx_session.reset(token)
 
 
 class ProviderStatsMixin:

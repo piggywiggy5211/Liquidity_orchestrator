@@ -22,14 +22,10 @@ class RequestResponseLoggingMiddleware(BaseHTTPMiddleware):
         headers = sanitize_headers(request.headers)
         query_params = dict(request.query_params)
         body_bytes = await request.body()
-        body_data_decoded = body_bytes.decode('utf-8')
+        body_data_decoded = body_bytes.decode("utf-8")
         method = request.method
 
-        log_message = (
-            f"APP HTTP REQUEST "
-            f" {method}"
-            f" URL: {url}"
-        )
+        log_message = f"APP HTTP REQUEST {method} URL: {url}"
         logger.bind(
             request_details={
                 "method": method,
@@ -54,14 +50,9 @@ class RequestResponseLoggingMiddleware(BaseHTTPMiddleware):
         status_code = response.status_code
         headers = sanitize_headers(response.headers)
         method = request.method
-        body_data_decoded = response_body[0].decode() if response_body else None,
+        body_data_decoded = response_body[0].decode() if response_body else None
 
-        log_message = (
-            f"APP HTTP RESPONSE"
-            f" {method}"
-            f" STATUS_CODE: {status_code}"
-            f" URL: {url}"
-        )
+        log_message = f"APP HTTP RESPONSE {method} STATUS_CODE: {status_code} URL: {url}"
 
         logger.bind(
             response_details={

@@ -1,14 +1,14 @@
 import asyncio
 from logging.config import fileConfig
 
+from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from alembic import context
-
 from app.core.config import settings
 from app.database.models import metadata
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -53,9 +53,9 @@ def run_migrations_offline() -> None:
 
 def do_run_migrations(connection: Connection) -> None:
     context.configure(
-        connection=connection, 
+        connection=connection,
         target_metadata=target_metadata,
-        render_as_batch=True
+        render_as_batch=True,
     )
 
     with context.begin_transaction():

@@ -4,9 +4,9 @@ from decimal import Decimal
 import pytest
 from sqlalchemy import select
 
-from app.service.models import Order, Outbox, Quote
-from app.service.enums import OrderStatus, QuoteDirection, OutboxEventType
 from app.database.uow import UnitOfWorkSqlAlchemy
+from app.service.enums import OrderStatus, OutboxEventType, QuoteDirection
+from app.service.models import Order, Outbox, Quote
 
 
 @pytest.mark.asyncio
@@ -40,15 +40,17 @@ async def test_uow_order_creation(db_session, session_factory, clean_db):
 async def test_uow_quote_and_outbox(db_session, session_factory, clean_db):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     async with uow:
-        uow.quotes.add(Quote(
-            direction=QuoteDirection.ON_RAMP,
-            pair="usd-usdt",
-            amount_in=Decimal("100"),
-            amount_out=Decimal("99"),
-            fee_rate=Decimal("0.01"),
-            provider_name="test_provider",
-            valid_until=datetime.now() + timedelta(minutes=10),
-        ))
+        uow.quotes.add(
+            Quote(
+                direction=QuoteDirection.ON_RAMP,
+                pair="usd-usdt",
+                amount_in=Decimal("100"),
+                amount_out=Decimal("99"),
+                fee_rate=Decimal("0.01"),
+                provider_name="test_provider",
+                valid_until=datetime.now() + timedelta(minutes=10),
+            )
+        )
 
         order = Order(
             incoming_amount=Decimal("100"),
@@ -63,11 +65,13 @@ async def test_uow_quote_and_outbox(db_session, session_factory, clean_db):
         uow.orders.add(order)
         await uow._session.flush()  # to get order.id
 
-        uow.outbox.add(Outbox(
-            order_id=order.id,
-            event_type=OutboxEventType.ORDER_COMPLETED,
-            payload={"amount_in": 100, "provider_name": "test_provider"},
-        ))
+        uow.outbox.add(
+            Outbox(
+                order_id=order.id,
+                event_type=OutboxEventType.ORDER_COMPLETED,
+                payload={"amount_in": 100, "provider_name": "test_provider"},
+            )
+        )
         await uow.commit()
 
     # Verify

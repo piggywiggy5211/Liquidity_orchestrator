@@ -1,6 +1,9 @@
-from sqlalchemy import Table, Column, Integer, String, DateTime, func, Enum, Numeric
-from .registry import metadata
+from sqlalchemy import Column, DateTime, Enum, Integer, Numeric, String, Table, func
+
 from app.service.enums import OrderStatus, QuoteDirection
+
+from .registry import metadata
+
 
 orders_table = Table(
     "orders",
@@ -14,11 +17,11 @@ orders_table = Table(
     Column("pair", String, nullable=False),
     Column("quote_id", String, unique=True, nullable=True),
     Column(
-        "status", 
-        Enum(OrderStatus, native_enum=False), 
+        "status",
+        Enum(OrderStatus, native_enum=False),
         default=OrderStatus.NEW,
         server_default=OrderStatus.NEW.value,
-        nullable=False
+        nullable=False,
     ),
     Column("provider_ref", String, nullable=True),
     Column("version", Integer, server_default="0", nullable=False),

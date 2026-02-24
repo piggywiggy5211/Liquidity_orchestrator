@@ -1,12 +1,13 @@
 import contextvars
+from typing import Any, Callable
 
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm.exc import StaleDataError
 
 from app.database.repositories.order import OrderRepository
-from app.database.repositories.quote import QuoteRepository
 from app.database.repositories.outbox import OutboxRepository
+from app.database.repositories.quote import QuoteRepository
 
 
 class UnitOfWorkSqlAlchemy:
@@ -34,11 +35,19 @@ class UnitOfWorkSqlAlchemy:
         try:
             await self._session.commit()
         except StaleDataError:
-            logger.error(f"it was updated by another process")
+            logger.error("it was updated by another process")
             raise
 
     async def rollback(self):
         await self._session.rollback()
+
+    async def switch_session_context_for_task(self, func: Callable, *args: Any, **kwargs: Any) -> Any:
+        async with self.session_factory() as session:
+            token = self.ctx_session.set(session)
+            try:
+                return await func(*args, **kwargs)
+            finally:
+                self.ctx_session.reset(token)
 
     async def __aenter__(self):
         return self

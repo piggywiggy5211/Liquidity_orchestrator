@@ -1,12 +1,15 @@
-import pkgutil
 import importlib
+import pkgutil
 from functools import cache
-from typing import TYPE_CHECKING
-from .base import IProvider, BaseProvider, ExecutionStatus, OrderExecutionRequest
+from typing import TYPE_CHECKING, Sequence
+
+from .base import BaseProvider, ExecutionStatus, IProvider, OrderExecutionRequest
+
 
 if TYPE_CHECKING:
-    PROVIDERS_LIST: list[type[IProvider]]
+    PROVIDERS_LIST: Sequence[type[IProvider]]
     PROVIDERS_MAP: dict[str, type[IProvider]]
+
 
 def discover_providers():
     """Dynamically imports all modules in the current package to register providers."""
@@ -14,11 +17,13 @@ def discover_providers():
         if module_name.startswith("provider_"):
             importlib.import_module(f".{module_name}", __package__)
 
+
 @cache
-def _get_providers() -> list[type[IProvider]]:
+def _get_providers() -> Sequence[type[IProvider]]:
     """Returns all subclasses of BaseProvider."""
     discover_providers()
     return BaseProvider.__subclasses__()
+
 
 @cache
 def _get_providers_map() -> dict[str, type[IProvider]]:
@@ -35,7 +40,9 @@ def __getattr__(name):
         case _:
             raise AttributeError(f"module {__name__} has no attribute {name}")
 
+
 # provider_map = {p.__name__: p for p in PROVIDERS}
+
 
 __all__ = (
     "IProvider",
@@ -44,4 +51,3 @@ __all__ = (
     "PROVIDERS_LIST",
     "PROVIDERS_MAP",
 )
-

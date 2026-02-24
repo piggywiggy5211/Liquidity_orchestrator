@@ -4,35 +4,41 @@ import sys
 import pytest
 import pytest_asyncio
 
+
 # Ensure project root on sys.path for imports like `import main`
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.database.models import map_models_sqlalchemy, metadata
-from app.database.db_helper import db_helper
-from app.api.deps import IDEMPOTENCY_SET
-
 from unittest.mock import AsyncMock, patch
+
+from app.api.deps import IDEMPOTENCY_SET
+from app.database.db_helper import db_helper
+from app.database.models import map_models_sqlalchemy, metadata
+
 
 @pytest.fixture(autouse=True)
 def clear_idempotency_set():
     IDEMPOTENCY_SET.clear()
     yield
 
+
 @pytest.fixture(autouse=True)
 def mock_asyncio_sleep():
     with patch("asyncio.sleep", AsyncMock()):
         yield
+
 
 @pytest.fixture
 def setup_db_mappings():
     map_models_sqlalchemy()
     yield
 
+
 @pytest.fixture
 def session_factory(setup_db_mappings):
     return db_helper.session_factory
+
 
 @pytest_asyncio.fixture
 async def db_session(setup_db_mappings):

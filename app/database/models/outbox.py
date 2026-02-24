@@ -1,6 +1,9 @@
-from sqlalchemy import Table, Column, Integer, DateTime, JSON, ForeignKey, func, Enum
-from .registry import metadata
+from sqlalchemy import JSON, Column, DateTime, Enum, ForeignKey, Integer, Table, func
+
 from app.service.enums import OutboxEventType
+
+from .registry import metadata
+
 
 outbox_table = Table(
     "outbox",

@@ -30,16 +30,16 @@ class QuoteRequest(Base):
 class QuoteResponse(Base):
     incoming_amount: Decimal = Field(
         ...,
-        examples=[100,],
+        examples=[100],
     )
     incoming_asset_code: str
     outgoing_amount: Decimal = Field(
         ...,
-        examples=[98,],
+        examples=[98],
     )
     outgoing_asset_code: str
     fee_amount: Decimal = Field(
         ...,
-        examples=[2,],
+        examples=[2],
     )
     fee_asset_code: str

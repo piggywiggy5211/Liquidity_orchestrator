@@ -1,16 +1,19 @@
 from sqlalchemy.orm import configure_mappers
-from .registry import mapper_registry
+
+from app.service.models import Order, Outbox, Quote
+
 from .order import orders_table
-from .quote import quotes_table
 from .outbox import outbox_table
-from app.service.models import Order, Quote, Outbox
+from .quote import quotes_table
+from .registry import mapper_registry
+
 
 def map_models_sqlalchemy():
     if not mapper_registry.mappers:
         mapper_registry.map_imperatively(
-            Order, 
+            Order,
             orders_table,
-            version_id_col=orders_table.c.version
+            version_id_col=orders_table.c.version,
         )
         mapper_registry.map_imperatively(Quote, quotes_table)
         mapper_registry.map_imperatively(Outbox, outbox_table)

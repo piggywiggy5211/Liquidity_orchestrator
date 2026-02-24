@@ -1,8 +1,11 @@
+from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, Any
-from dataclasses import dataclass, field
-from .enums import OrderStatus, QuoteDirection, OutboxEventType
+from typing import Any, Optional
+
+from .dto import OrderCreateDTO, OrderDTO, OutboxDTO, QuoteDTO
+from .enums import OrderStatus, OutboxEventType, QuoteDirection
+
 
 @dataclass
 class Order:
@@ -20,6 +23,22 @@ class Order:
     updated_at: Optional[datetime] = None
     version: int = 0
 
+    @classmethod
+    def from_create_dto(cls, data: OrderCreateDTO, commission_rate: Decimal) -> "Order":
+        commission_amount = data.amount * commission_rate
+        target_amount_out = data.amount - commission_amount
+        return cls(
+            incoming_amount=data.amount,
+            outgoing_amount=target_amount_out,
+            direction=data.direction,
+            pair=data.pair,
+            incoming_account=data.incoming_account,
+            outgoing_account=data.outgoing_account,
+        )
+
+    def to_dto(self) -> OrderDTO:
+        return OrderDTO.model_validate(self)
+
 
 @dataclass
 class Quote:
@@ -32,6 +51,10 @@ class Quote:
     valid_until: datetime
     id: Optional[int] = None
 
+    def to_dto(self) -> QuoteDTO:
+        return QuoteDTO.model_validate(self)
+
+
 @dataclass
 class Outbox:
     order_id: int
@@ -39,3 +62,6 @@ class Outbox:
     payload: dict[str, Any]
     created_at: datetime = field(default_factory=datetime.now)
     id: Optional[int] = None
+
+    def to_dto(self) -> OutboxDTO:
+        return OutboxDTO.model_validate(self)

@@ -1,68 +1,62 @@
 import asyncio
 import time
-from datetime import datetime
-from decimal import Decimal
 
 import httpx
 import pandas as pd
 from loguru import logger
-from sqlalchemy.orm.exc import StaleDataError
 
 from app.core.config import settings
 from app.service.dto import (
-    QuoteGetDTO,
-    QuoteResultDTO,
     OrderCreateDTO,
     OrderDTO,
     OrderExecutionResult,
     QuoteDTO,
+    QuoteRequestDTO,
+    QuoteResultDTO,
 )
-from app.service.enums import OrderStatus, OutboxEventType as OET
+from app.service.enums import OrderStatus
+from app.service.enums import OutboxEventType as OET
 from app.service.interfaces import IUnitOfWork
-from app.service.mixins import TaskWrapperMixin, ProviderStatsMixin
-from app.service.models import Order, Quote, Outbox
-from app.service.providers import PROVIDERS_LIST, OrderExecutionRequest, ExecutionStatus, IProvider, PROVIDERS_MAP
+from app.service.mixins import ProviderStatsMixin
+from app.service.models import Order, Outbox, Quote
+from app.service.providers import PROVIDERS_LIST, PROVIDERS_MAP, ExecutionStatus, IProvider, OrderExecutionRequest
 
 
-class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
+class LiquidityService(ProviderStatsMixin):
     def __init__(self, uow: IUnitOfWork, http_client: httpx.AsyncClient):
         self.uow = uow
         self.http_client = http_client
 
-    def validate_sum(self, amount: Decimal) -> bool:
-        return amount <= settings.max_order_amount
-
     async def create_order(self, data: OrderCreateDTO) -> OrderDTO:
-        commission_amount = data.amount * settings.service_fee
-        target_amount_out = data.amount - commission_amount
-        order = Order(
-            incoming_amount=data.amount,
-            outgoing_amount=target_amount_out,
-            direction=data.direction,
-            pair=data.pair,
-            incoming_account=data.incoming_account,
-            outgoing_account=data.outgoing_account,
-            status=OrderStatus.NEW,
-            created_at=datetime.now(),
-        )
+        order = Order.from_create_dto(data, settings.service_fee)
         async with self.uow:
             self.uow.orders.add(order)
             await self.uow.commit()
             logger.info(f"Order created with id: {order.id}")
-            return OrderDTO.model_validate(order)
+            return order.to_dto()
 
     async def get_order(self, order_id: int) -> OrderDTO | None:
+        """
+        Retrieves an order by its ID from the database and returns it as a DTO.
+        """
         async with self.uow:
-            _, order_dto = await self.uow.orders.get(order_id)
-            return order_dto
+            order_model = await self.uow.orders.get(order_id)
+            return order_model.to_dto() if order_model else None
 
     async def execute_order(self, order_id: int) -> None:
+        """
+        Executes an order by fetching provider quotes, building an execution plan,
+        and attempting execution with providers sequentially until successful.
+        """
         logger.info(f"Executing order_id {order_id}")
         async with self.uow:
-            order_model, _ = await self.uow.orders.get(order_id)
+            order_model = await self.uow.orders.get(order_id)
+            if not order_model:
+                logger.error(f"Order {order_id} not found")
+                return
             order_model.status = OrderStatus.PROCESSING
             await self.uow.commit()
-            order_dto = OrderDTO.model_validate(order_model)
+            order_dto = order_model.to_dto()
 
         logger.info(f"Changed order_id {order_dto.id} status to {order_dto.status}")
         quotes = await self._fetch_quotes_from_providers(order_dto)
@@ -88,7 +82,7 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
         logger.warning(f"Order {order_id} failed after trying all providers")
         await self._set_order_failure(order_id)
 
-    async def get_quote(self, data: QuoteGetDTO) -> QuoteResultDTO:
+    async def get_quote(self, data: QuoteRequestDTO) -> QuoteResultDTO:
         incoming_asset, outgoing_asset, *_ = data.pair.split("-")
         fee_amount = data.amount * settings.service_fee
         outgoing_amount = data.amount - fee_amount
@@ -143,9 +137,9 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
         latency_weight = 0.1
 
         df["final_score"] = (
-                df["timeout_score"] * timeout_weight +
-                df["fee_score"] * fee_weight +
-                df["latency_score"] * latency_weight
+            df["timeout_score"] * timeout_weight
+            + df["fee_score"] * fee_weight
+            + df["latency_score"] * latency_weight  # keep multiline
         )
 
         # Sort by final score descending
@@ -168,8 +162,8 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
         logger.info(f"Fetching quotes for order {order.id}")
         tasks = [
             asyncio.create_task(
-                self.task_wrapper(
-                    self._fetch_provider_quote, order, provider_instance=provider_cls(),
+                self.uow.switch_session_context_for_task(
+                    self._fetch_provider_quote, order, provider_instance=provider_cls()
                 ),
             )
             for provider_cls in PROVIDERS_LIST
@@ -205,7 +199,7 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
                     f"Successfully saved quote id: {quote.id} from {provider_instance.__class__.__name__}"
                     f" for order_id {order.id}",
                 )
-                return QuoteDTO.model_validate(quote)
+                return quote.to_dto()
 
         except Exception as e:
             logger.warning(
@@ -224,7 +218,7 @@ class LiquidityService(TaskWrapperMixin, ProviderStatsMixin):
         )
 
     async def _execute_request_by_provider(self, provider_cls, request):
-        start_time = time.perf_counter()
+        start_time = time.perf_counter()  # TODO ПОПРАВИТЬ
         logger.info(f"Send request for provider {provider_cls.__name__}")
         response = await provider_cls().execute(request)
         latency = time.perf_counter() - start_time

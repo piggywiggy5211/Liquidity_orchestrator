@@ -1,11 +1,14 @@
 import pytest
 from fastapi.testclient import TestClient
+
 from app.main import main_app
+
 
 @pytest.fixture
 def client():
     with TestClient(main_app) as c:
         yield c
+
 
 def test_get_order_success(client, clean_db):
     # 1. Create an order
@@ -14,7 +17,7 @@ def test_get_order_success(client, clean_db):
         "pair": "USDT-USD",
         "amount": 100.0,
         "incoming_account": "acct-1",
-        "outgoing_account": "acct-2"
+        "outgoing_account": "acct-2",
     }
     headers = {"X-Api-Ts": "12345"}
     create_resp = client.post("/orders", json=payload, headers=headers)
@@ -28,6 +31,7 @@ def test_get_order_success(client, clean_db):
     assert data["id"] == order_id
     assert data["incoming_account"] == "acct-1"
     assert data["pair"] == "USDT-USD"
+
 
 def test_get_order_not_found(client, clean_db):
     response = client.get("/orders/999999")

@@ -22,7 +22,7 @@ For asynchronous background tasks (like order execution), the service must ensur
 
 This is achieved using `contextvars.ContextVar`:
 1. **ContextVar**: The `UnitOfWorkSqlAlchemy` stores the current session in a `contextvars.ContextVar`.
-2. **Task Wrapper**: When a background task is initiated (e.g., via FastAPI's `BackgroundTasks` or `asyncio.create_task` for parallel execution), it is wrapped using `service.task_wrapper`.
+2. **Task Wrapper**: When a background task is initiated (e.g., via FastAPI's `BackgroundTasks` or `asyncio.create_task` for parallel execution), it is wrapped using `service.uow.switch_session_context_for_task`.
 3. **Session Lifecycle**: The wrapper creates a new session from the `session_factory`, sets it as the current session in the `ContextVar`, and **automatically closes the session** after the task completes.
 4. **Transparent Access**: Repositories retrieve the session from the `ContextVar` via a property in the UOW, allowing the same service logic to work seamlessly in both HTTP request contexts and background task contexts.
 
@@ -121,6 +121,14 @@ uv run alembic revision --autogenerate -m "your description"
 ```bash
 uv run pytest -vv
 ```
+
+### Running Linters auto format 
+```bash
+uv run ruff check --fix
+uv run ruff format
+uv run mypy .
+```
+
 
 
 ## Running the Application

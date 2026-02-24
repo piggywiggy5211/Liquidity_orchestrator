@@ -38,15 +38,16 @@ async def test_execute_order_parallel_conflict(session_factory, clean_db):
 
         # Mock _fetch_quotes_from_providers to avoid real network calls
         with patch(
-                "app.service.liquidity_service.LiquidityService._fetch_quotes_from_providers", new_callable=AsyncMock,
-                return_value=[],
+            "app.service.liquidity_service.LiquidityService._fetch_quotes_from_providers",
+            new_callable=AsyncMock,
+            return_value=[],
         ):
             service1 = LiquidityService(uow1, AsyncMock())
             service2 = LiquidityService(uow2, AsyncMock())
             service3 = LiquidityService(uow3, AsyncMock())
 
-            # Run in parallel. 
-            # Due to asyncio.gather and await inside execute_order, 
+            # Run in parallel.
+            # Due to asyncio.gather and await inside execute_order,
             # sessions will have time to read the same data version before the first commit.
             results = await asyncio.gather(
                 service1.execute_order(order_id),

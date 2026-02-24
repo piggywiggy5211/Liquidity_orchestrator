@@ -12,11 +12,7 @@ async def log_request(request: httpx.Request):
     body_data_decoded = body_bytes.decode(errors="replace")
     method = request.method
 
-    log_message = (
-        f"HTTPX CLIENT REQUEST"
-        f" {method}"
-        f" URL: {url}"
-    )
+    log_message = f"HTTPX CLIENT REQUEST {method} URL: {url}"
     logger.bind(
         request_details={
             "method": method,
@@ -37,12 +33,7 @@ async def log_response(response: httpx.Response):
     body_data_decoded = body_bytes.decode(errors="replace")
     method = request.method
 
-    log_message = (
-        f"HTTPX CLIENT RESPONSE"
-        f" {method}"
-        f" STATUS_CODE: {status_code}"
-        f" URL: {url}"
-    )
+    log_message = f"HTTPX CLIENT RESPONSE {method} STATUS_CODE: {status_code} URL: {url}"
 
     logger.bind(
         response_details={

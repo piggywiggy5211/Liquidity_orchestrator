@@ -1,8 +1,9 @@
 import re
-from typing import List, Callable, Dict, Any, Mapping
+from typing import Callable, List
+
 
 # IBAN regex: starts with 2 letters, 2 digits, then 11-27 alphanumeric characters
-IBAN_REGEX = re.compile(r'\b[A-Z]{2}\d{2}[A-Z0-9]{11,27}\b')
+IBAN_REGEX = re.compile(r"\b[A-Z]{2}\d{2}[A-Z0-9]{11,27}\b")
 
 
 def mask_iban(text: str) -> str:
@@ -16,12 +17,12 @@ def mask_iban(text: str) -> str:
 
 
 class LogSanitizer:
-    def __init__(self):
+    def __init__(self) -> None:
         self._sanitizers: List[Callable[[str], str]] = [
             mask_iban,
         ]
 
-    def add_sanitizer(self, sanitizer: Callable[[str], str]):
+    def add_sanitizer(self, sanitizer: Callable[[str], str]) -> None:
         """Adds a new sanitization function to the list."""
         self._sanitizers.append(sanitizer)
 

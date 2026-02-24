@@ -1,6 +1,9 @@
-from sqlalchemy import Table, Column, Integer, String, DateTime, Numeric, Enum
-from .registry import metadata
+from sqlalchemy import Column, DateTime, Enum, Integer, Numeric, String, Table
+
 from app.service.enums import QuoteDirection
+
+from .registry import metadata
+
 
 quotes_table = Table(
     "quotes",

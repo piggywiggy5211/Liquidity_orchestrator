@@ -1,11 +1,13 @@
 import hashlib
+from decimal import Decimal
 from typing import Annotated
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import Depends, Request, Header
+from fastapi import Depends, Header, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.database.db_helper import db_helper
 from app.database.uow import UnitOfWorkSqlAlchemy
 from app.service.liquidity_service import LiquidityService
@@ -19,8 +21,8 @@ IDEMPOTENCY_SET = set()
 
 
 async def passes_idempotency_check(
-        request: Request,
-        x_api_ts: Annotated[str | None, Header(alias="X-Api-Ts")] = None,
+    request: Request,
+    x_api_ts: Annotated[str | None, Header(alias="X-Api-Ts")] = None,
 ) -> bool:
     if x_api_ts is None:
         return False
@@ -43,7 +45,12 @@ async def get_uow(session: AsyncSession = Depends(db_helper.session_getter)) -> 
 
 
 async def get_liquidity_service(
-        uow: Annotated[UnitOfWorkSqlAlchemy, Depends(get_uow)],
-        http_client: Annotated[httpx.AsyncClient, Depends(get_http_client)],
+    uow: Annotated[UnitOfWorkSqlAlchemy, Depends(get_uow)],
+    http_client: Annotated[httpx.AsyncClient, Depends(get_http_client)],
 ) -> LiquidityService:
     return LiquidityService(uow, http_client)
+
+
+def validate_amount(amount: Decimal):
+    if amount > settings.max_order_amount:
+        raise HTTPException(status_code=422, detail="Not allowed, amount over the limit")

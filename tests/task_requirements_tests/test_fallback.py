@@ -1,13 +1,15 @@
-import pytest
 from decimal import Decimal
-from unittest.mock import AsyncMock, patch, PropertyMock
-from sqlalchemy import select
-from app.service.liquidity_service import LiquidityService
-from app.service.dto import OrderCreateDTO, QuoteDTO
-from app.service.enums import QuoteDirection, OrderStatus, OutboxEventType
-from app.service.models import Order, Outbox
+from unittest.mock import AsyncMock, PropertyMock, patch
+
+import pytest
+
 from app.database.uow import UnitOfWorkSqlAlchemy
+from app.service.dto import OrderCreateDTO, QuoteDTO
+from app.service.enums import OrderStatus, QuoteDirection
+from app.service.liquidity_service import LiquidityService
+from app.service.models import Order
 from app.service.providers import ExecutionStatus
+
 
 @pytest.mark.asyncio
 async def test_fallback_best_fails_next_succeeds(db_session, session_factory, clean_db):
@@ -29,7 +31,7 @@ async def test_fallback_best_fails_next_succeeds(db_session, session_factory, cl
         pair="BTC-USD",
         amount=Decimal("100"),
         incoming_account="acc1",
-        outgoing_account="acc2"
+        outgoing_account="acc2",
     )
     created = await service.create_order(order_in)
     order_id = int(created.id)
@@ -43,7 +45,7 @@ async def test_fallback_best_fails_next_succeeds(db_session, session_factory, cl
         amount_out=Decimal("99"),
         fee_rate=Decimal("0.01"),
         direction=QuoteDirection.ON_RAMP,
-        pair="BTC-USD"
+        pair="BTC-USD",
     )
     quote_b = QuoteDTO(
         id=102,
@@ -52,7 +54,7 @@ async def test_fallback_best_fails_next_succeeds(db_session, session_factory, cl
         amount_out=Decimal("98"),
         fee_rate=Decimal("0.02"),
         direction=QuoteDirection.ON_RAMP,
-        pair="BTC-USD"
+        pair="BTC-USD",
     )
     quote_c = QuoteDTO(
         id=103,
@@ -61,7 +63,7 @@ async def test_fallback_best_fails_next_succeeds(db_session, session_factory, cl
         amount_out=Decimal("97"),
         fee_rate=Decimal("0.03"),
         direction=QuoteDirection.ON_RAMP,
-        pair="BTC-USD"
+        pair="BTC-USD",
     )
 
     service._fetch_quotes_from_providers = AsyncMock(return_value=[quote_a, quote_b, quote_c])
@@ -70,9 +72,10 @@ async def test_fallback_best_fails_next_succeeds(db_session, session_factory, cl
     mock_latency = {"ProviderA": 0.1, "ProviderB": 0.1, "ProviderC": 0.1}
     mock_timeouts = {"ProviderA": 0.0, "ProviderB": 0.0, "ProviderC": 0.0}
 
-    with patch.object(LiquidityService, "average_latency", new_callable=PropertyMock) as mock_lat, \
-         patch.object(LiquidityService, "timeout_percentage", new_callable=PropertyMock) as mock_tout:
-        
+    with (
+        patch.object(LiquidityService, "average_latency", new_callable=PropertyMock) as mock_lat,
+        patch.object(LiquidityService, "timeout_percentage", new_callable=PropertyMock) as mock_tout,
+    ):
         mock_lat.return_value = mock_latency
         mock_tout.return_value = mock_timeouts
 
