@@ -3,6 +3,7 @@
 .ai/
 test.db
 .output.txt
-GEMINI.md
 __pycache__/
-
+pg_data/
+/GEMINI.md
+/.gemini/

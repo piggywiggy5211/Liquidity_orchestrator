@@ -20,7 +20,7 @@ class OrderRepository(BaseRepository[Order], IRepositoryOrder):
             "updated_at": datetime.now(),
         }
         if data.quote_id:
-            update_values["quote_id"] = data.quote_id
+            update_values["quote_id"] = str(data.quote_id)
         if data.provider_ref:
             update_values["provider_ref"] = data.provider_ref
 

@@ -1,0 +1,18 @@
+version: '3'
+
+tasks:
+  check:
+    deps: [ pytest, ruff, mypy ]
+    aliases: [ x ]
+  mypy:
+    cmds:
+      - uv run mypy .
+  ruff:
+    cmds:
+      - uv run ruff check --fix
+      - uv run ruff format
+  pytest:
+    cmds:
+      - uv run pytest -vv
+
+dotenv: [ '.env' ]
