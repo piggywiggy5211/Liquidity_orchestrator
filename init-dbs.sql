@@ -1,7 +1,11 @@
--- This initialization script runs when the PostgreSQL container is created for the first time.
--- The default database specified by POSTGRES_DB is already created by the postgres image.
--- You can use this file to create additional databases and users for future microservices.
+-- Initial database setup for Liquidity Orchestrator
 
--- Example for adding a new service database:
--- CREATE DATABASE another_service_db;
--- GRANT ALL PRIVILEGES ON DATABASE another_service_db TO myuser;
+-- Service 1: Liquidity Orchestrator
+CREATE USER orchestrator WITH PASSWORD 'orchestrator_pass';
+CREATE DATABASE liquidity_orchestrator;
+GRANT ALL PRIVILEGES ON DATABASE liquidity_orchestrator TO orchestrator;
+
+-- To add new services, follow the pattern above:
+-- CREATE USER new_service_user WITH PASSWORD 'password';
+-- CREATE DATABASE new_service_db;
+-- GRANT ALL PRIVILEGES ON DATABASE new_service_db TO new_service_user;
