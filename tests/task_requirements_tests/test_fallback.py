@@ -12,7 +12,7 @@ from app.service.providers import ExecutionStatus
 
 
 @pytest.mark.asyncio
-async def test_fallback_best_fails_next_succeeds(db_session, session_factory, clean_db):
+async def test_fallback_best_fails_next_succeeds(db_session, session_factory):
     """
     Test scenario:
     1. Three providers provide quotes.

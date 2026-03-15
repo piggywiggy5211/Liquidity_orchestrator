@@ -11,7 +11,7 @@ from app.service.liquidity_service import LiquidityService
 
 
 @pytest.mark.asyncio
-async def test_execute_order_parallel_conflict(session_factory, clean_db):
+async def test_execute_order_parallel_conflict(session_factory):
     """
     Verify that parallel calls to execute_order trigger
     optimistic locking and raise an Exception.

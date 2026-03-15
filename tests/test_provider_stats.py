@@ -17,7 +17,7 @@ def clear_stats():
 
 
 @pytest.mark.asyncio
-async def test_provider_stats_mixin_logic(db_session, session_factory, clean_db):
+async def test_provider_stats_mixin_logic(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     service = LiquidityService(uow, AsyncMock())
 
@@ -34,7 +34,7 @@ async def test_provider_stats_mixin_logic(db_session, session_factory, clean_db)
 
 
 @pytest.mark.asyncio
-async def test_provider_stats_moving_window(db_session, session_factory, clean_db):
+async def test_provider_stats_moving_window(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     service = LiquidityService(uow, AsyncMock())
 
@@ -55,7 +55,7 @@ async def test_provider_stats_moving_window(db_session, session_factory, clean_d
 
 
 @pytest.mark.asyncio
-async def test_provider_stats_integration_in_execute_order(db_session, session_factory, clean_db):
+async def test_provider_stats_integration_in_execute_order(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     service = LiquidityService(uow, AsyncMock())
 

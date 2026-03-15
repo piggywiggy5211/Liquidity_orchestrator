@@ -140,4 +140,3 @@ uv run python -m app.main
 Once the application is running, you can access the interactive API documentation at:
 - **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
-

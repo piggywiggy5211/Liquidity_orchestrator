@@ -12,7 +12,7 @@ from app.service.providers import ExecutionStatus
 
 
 @pytest.mark.asyncio
-async def test_order_execution_full_cycle_success(db_session, session_factory, clean_db):
+async def test_order_execution_full_cycle_success(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     service = LiquidityService(uow, AsyncMock())
 
@@ -43,7 +43,7 @@ async def test_order_execution_full_cycle_success(db_session, session_factory, c
 
 
 @pytest.mark.asyncio
-async def test_order_execution_retry_logic(db_session, session_factory, clean_db):
+async def test_order_execution_retry_logic(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     service = LiquidityService(uow, AsyncMock())
 
@@ -75,7 +75,7 @@ async def test_order_execution_retry_logic(db_session, session_factory, clean_db
 
 
 @pytest.mark.asyncio
-async def test_order_execution_all_fail(db_session, session_factory, clean_db):
+async def test_order_execution_all_fail(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     service = LiquidityService(uow, AsyncMock())
 

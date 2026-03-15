@@ -10,7 +10,7 @@ from app.service.models import Order, Outbox, Quote
 
 
 @pytest.mark.asyncio
-async def test_uow_order_creation(db_session, session_factory, clean_db):
+async def test_uow_order_creation(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     async with uow:
         order = Order(
@@ -37,7 +37,7 @@ async def test_uow_order_creation(db_session, session_factory, clean_db):
 
 
 @pytest.mark.asyncio
-async def test_uow_quote_and_outbox(db_session, session_factory, clean_db):
+async def test_uow_quote_and_outbox(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     async with uow:
         uow.quotes.add(

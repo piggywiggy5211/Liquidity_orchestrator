@@ -10,7 +10,7 @@ def client():
         yield c
 
 
-def test_get_order_success(client, clean_db):
+def test_get_order_success(client):
     # 1. Create an order
     payload = {
         "direction": "on-ramp",
@@ -33,7 +33,7 @@ def test_get_order_success(client, clean_db):
     assert data["pair"] == "USDT-USD"
 
 
-def test_get_order_not_found(client, clean_db):
+def test_get_order_not_found(client):
     response = client.get("/orders/999999")
     assert response.status_code == 404
     assert response.json()["detail"] == "Order not found"

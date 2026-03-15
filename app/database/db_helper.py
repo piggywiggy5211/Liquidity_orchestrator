@@ -1,4 +1,5 @@
-from typing import AsyncGenerator
+import typing
+from typing import AsyncGenerator, Type
 
 from loguru import logger
 from sqlalchemy.ext.asyncio import (
@@ -7,8 +8,13 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool, QueuePool
 
 from app.core.config import settings
+
+
+if typing.TYPE_CHECKING:
+    from sqlalchemy.pool.base import Pool
 
 
 class DatabaseHelper:
@@ -19,13 +25,21 @@ class DatabaseHelper:
         echo_pool: bool = False,
         pool_size: int = 5,
         max_overflow: int = 10,
+        poolclass: Type["Pool"] = QueuePool,
     ) -> None:
+
+        pool_settings = {}
+        if poolclass is NullPool:
+            pool_settings["poolclass"] = poolclass
+        else:
+            pool_settings["pool_size"] = pool_size
+            pool_settings["max_overflow"] = max_overflow
+
         self.engine: AsyncEngine = create_async_engine(
             url=url,
             echo=echo,
             echo_pool=echo_pool,
-            pool_size=pool_size,
-            max_overflow=max_overflow,
+            **pool_settings,
         )
         self.session_factory: async_sessionmaker[AsyncSession] = async_sessionmaker(
             bind=self.engine,

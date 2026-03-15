@@ -13,7 +13,7 @@ from app.service.providers import ExecutionStatus
 
 
 @pytest.mark.asyncio
-async def test_outbox_atomicity_rollback(db_session, session_factory, clean_db):
+async def test_outbox_atomicity_rollback(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     service = LiquidityService(uow, AsyncMock())
 
@@ -76,7 +76,7 @@ async def test_outbox_atomicity_rollback(db_session, session_factory, clean_db):
 
 
 @pytest.mark.asyncio
-async def test_outbox_atomicity_success(db_session, session_factory, clean_db):
+async def test_outbox_atomicity_success(db_session, session_factory):
     """
     Additional test: verify that both changes are saved on regular success.
     """

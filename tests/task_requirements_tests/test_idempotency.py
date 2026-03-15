@@ -32,7 +32,7 @@ def test_create_order_without_x_api_ts(client):
     assert "Idempotency check failed" in response.json()["detail"]
 
 
-def test_create_order_idempotency_success_and_duplicate(client, clean_db):
+def test_create_order_idempotency_success_and_duplicate(client):
     payload = {
         "direction": "on-ramp",
         "pair": "USDT-USD",
@@ -54,7 +54,7 @@ def test_create_order_idempotency_success_and_duplicate(client, clean_db):
         assert "Idempotency check failed" in response2.json()["detail"]
 
 
-def test_create_order_different_ts_same_body(client, clean_db):
+def test_create_order_different_ts_same_body(client):
     payload = {
         "direction": "on-ramp",
         "pair": "USDT-USD",
@@ -72,7 +72,7 @@ def test_create_order_different_ts_same_body(client, clean_db):
         assert response2.status_code == 200
 
 
-def test_create_order_same_ts_different_body(client, clean_db):
+def test_create_order_same_ts_different_body(client):
     ts = "12345"
     with patch("asyncio.sleep", AsyncMock()):
         # First request

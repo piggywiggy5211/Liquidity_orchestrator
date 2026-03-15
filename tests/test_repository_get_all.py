@@ -9,7 +9,7 @@ from app.service.models import Order
 
 
 @pytest.mark.asyncio
-async def test_get_all_functionality(db_session, session_factory, clean_db):
+async def test_get_all_functionality(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
 
     # 1. Add test data

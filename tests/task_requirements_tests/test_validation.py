@@ -26,7 +26,7 @@ def test_create_order_validation_fail(client):
     assert response.json()["detail"] == "Not allowed, amount over the limit"
 
 
-def test_create_order_validation_success(client, clean_db):
+def test_create_order_validation_success(client):
     response = client.post(
         "/orders",
         json={

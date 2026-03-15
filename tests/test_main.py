@@ -76,7 +76,7 @@ def test_json_logging_format():
     assert "trace_id" in data
 
 
-def test_create_order_endpoint(client, clean_db):
+def test_create_order_endpoint(client):
     with patch("asyncio.sleep", AsyncMock()):
         response = client.post(
             "/orders",
@@ -114,7 +114,7 @@ def test_get_quote_endpoint(client):
 
 
 @pytest.mark.asyncio
-async def test_liquidity_service(db_session, session_factory, clean_db):
+async def test_liquidity_service(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     mock_http = AsyncMock()
     service = LiquidityService(uow, mock_http)
