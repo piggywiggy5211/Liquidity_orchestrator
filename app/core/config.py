@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).parent.parent.parent
 
 
 class DatabaseConfig(BaseModel):
-    url: str = f"sqlite+aiosqlite:///{BASE_DIR}/test.db"
+    url: str = "postgresql+asyncpg://orchestrator:orchestrator_pass@localhost:5432/liquidity_orchestrator"
     echo: bool = False
     echo_pool: bool = False
     pool_size: int = 50
