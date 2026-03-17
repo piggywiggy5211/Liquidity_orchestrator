@@ -9,7 +9,8 @@ from testcontainers.postgres import PostgresContainer
 
 from app.database import db_helper as db_helper_module
 from app.database.db_helper import DatabaseHelper, db_helper
-from app.database.models import metadata
+from app.database.models import map_models_sqlalchemy, metadata
+
 
 type DB_URL = str
 
@@ -17,6 +18,11 @@ type DB_URL = str
 class TestDBType(str, Enum):
     LOCAL = "LOCAL"
     TESTCONTAINER = "TESTCONTAINER"
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def setup_map_models():
+    map_models_sqlalchemy()
 
 
 @pytest.fixture(scope="session")
@@ -64,6 +70,5 @@ def session_factory():
 
 @pytest_asyncio.fixture
 async def db_session():
-    async for session in (
-        db_helper.session_getter()):
+    async for session in db_helper.session_getter():
         yield session
