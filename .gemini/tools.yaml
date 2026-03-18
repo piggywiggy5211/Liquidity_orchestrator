@@ -1,0 +1,49 @@
+sources:
+  lo-db:
+    type: postgres
+    host: localhost
+    port: 5432
+    user: orchestrator
+    password: orchestrator_pass
+    database: liquidity_orchestrator
+
+tools:
+  search_order_by_incoming_amount:
+    type: postgres-sql
+    source: lo-db
+    description: Search order by incoming amount
+    parameters:
+      - name: incoming_amount
+        type: integer
+        description: The incoming amount of order.
+    statement: |
+      SELECT id, incoming_amount, status, created_at 
+      FROM orders 
+      WHERE incoming_amount = $1 
+      ORDER BY created_at DESC 
+      LIMIT 10;
+  execute_sql_tool:
+    type: postgres-execute-sql
+    source: lo-db
+    description: Use this tool to execute a SQL statement.
+  list_tables:
+    type: postgres-list-tables
+    source: lo-db
+    description: List all tables in the database.
+  list_indexes:
+    type: postgres-list-indexes
+    source: lo-db
+    description: List all indexes for a specific table.
+  list_active_queries:
+    type: postgres-list-active-queries
+    source: lo-db
+    description: List all active queries on the database.
+---
+toolsets:
+  lo_toolset:
+    tools:
+      - search_order_by_incoming_amount
+      - execute_sql_tool
+      - list_tables
+      - list_indexes
+      - list_active_queries

@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "AfterAgent": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "final-lint-check",
+            "type": "command",
+            "command": "bash ${extensionPath}/hooks/lint_and_format.sh",
+            "description": "Checks the project via Mypy and Ruff before AI finishes its turn."
+          }
+        ]
+      }
+    ]
+  }
+}
