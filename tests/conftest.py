@@ -1,14 +1,6 @@
-import pathlib
-import sys
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
-
-# Ensure the project root on sys.path for imports like `import main`
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
 from app.api.deps import IDEMPOTENCY_SET
 

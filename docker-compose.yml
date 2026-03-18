@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16
+    image: postgres:18
     container_name: liquidity_orchestrator_db
     restart: always
     environment:
@@ -8,7 +8,6 @@ services:
       - POSTGRES_PASSWORD=admin_password
       - POSTGRES_DB=postgres
     volumes:
-      - ./pg_data:/var/lib/postgresql/data
       - ./init-dbs.sql:/docker-entrypoint-initdb.d/init-dbs.sql
     ports:
       - "5432:5432"

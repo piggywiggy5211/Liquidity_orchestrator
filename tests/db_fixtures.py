@@ -7,7 +7,7 @@ import pytest_asyncio
 from sqlalchemy.pool import NullPool
 from testcontainers.postgres import PostgresContainer
 
-from app.database import db_helper as db_helper_module
+from app.core.config import settings
 from app.database.db_helper import DatabaseHelper, db_helper
 from app.database.models import map_models_sqlalchemy, metadata
 
@@ -33,7 +33,7 @@ def test_db_type():
 @pytest.fixture(scope="session")
 def db_url(test_db_type) -> Generator[DB_URL, None]:
     if test_db_type == TestDBType.TESTCONTAINER:
-        with PostgresContainer("postgres:16") as postgres:
+        with PostgresContainer("postgres:18") as postgres:
             url = postgres.get_connection_url()
             if "://" in url:
                 _, rest = url.split("://", 1)
@@ -47,12 +47,16 @@ def db_url(test_db_type) -> Generator[DB_URL, None]:
 async def setup_db_helper(db_url):
     new_db_helper = DatabaseHelper(
         url=db_url,
-        echo=False,
-        poolclass=NullPool,  # avoid connection state leakage
+        echo=settings.db.echo,
+        echo_pool=settings.db.echo_pool,
+        pool_size=settings.db.pool_size,
+        max_overflow=settings.db.max_overflow,
+        poolclass=NullPool,
     )
-    db_helper_module.db_helper = new_db_helper
+    db_helper.engine = new_db_helper.engine
+    db_helper.session_factory = new_db_helper.session_factory
     yield
-    await db_helper_module.db_helper.dispose()
+    await db_helper.dispose()
 
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
