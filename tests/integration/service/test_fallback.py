@@ -13,15 +13,6 @@ from app.service.providers import ExecutionStatus
 
 @pytest.mark.asyncio
 async def test_fallback_best_fails_next_succeeds(db_session, session_factory):
-    """
-    Test scenario:
-    1. Three providers provide quotes.
-    2. ProviderA is scored better than ProviderB.
-    3. ProviderA fails during execution (returns TIMEOUT).
-    4. System falls back to ProviderB.
-    5. ProviderB succeeds.
-    6. Order status becomes COMPLETED.
-    """
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     service = LiquidityService(uow, AsyncMock())
 
@@ -36,8 +27,7 @@ async def test_fallback_best_fails_next_succeeds(db_session, session_factory):
     created = await service.create_order(order_in)
     order_id = int(created.id)
 
-    # 2. Mock quotes from three providers
-    # ProviderA has lower fee_rate, so it should be ranked higher
+    # 2. Mock quotes
     quote_a = QuoteDTO(
         id=101,
         provider_name="ProviderA",
@@ -68,7 +58,6 @@ async def test_fallback_best_fails_next_succeeds(db_session, session_factory):
 
     service._fetch_quotes_from_providers = AsyncMock(return_value=[quote_a, quote_b, quote_c])
 
-    # Mock scoring metrics to be identical for providers to ensure fee_rate is the tie-breaker/main factor
     mock_latency = {"ProviderA": 0.1, "ProviderB": 0.1, "ProviderC": 0.1}
     mock_timeouts = {"ProviderA": 0.0, "ProviderB": 0.0, "ProviderC": 0.0}
 
@@ -79,20 +68,15 @@ async def test_fallback_best_fails_next_succeeds(db_session, session_factory):
         mock_lat.return_value = mock_latency
         mock_tout.return_value = mock_timeouts
 
-        # 3. Mock provider execution
         with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
-            # First call (ProviderA) returns TIMEOUT, second (ProviderB) returns SUCCESS
             mock_execute.side_effect = [
                 {"status": ExecutionStatus.TIMEOUT, "provider_ref": "ref-fail-a"},
                 {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref-success-b"},
             ]
 
-            # 4. Run execution
             await service.execute_order(order_id)
 
-    # 5. Verify results in a new session
     async with session_factory() as session:
-        # Order should be COMPLETED via ProviderB
         db_order = await session.get(Order, order_id)
         assert db_order.status == OrderStatus.COMPLETED
         assert db_order.provider_ref == "ref-success-b"

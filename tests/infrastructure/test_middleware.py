@@ -16,9 +16,6 @@ def test_request_response_logging(capsys, client, clear_idempotency_set, mock_as
     captured = capsys.readouterr().out
     log_lines = [json.loads(line) for line in captured.splitlines() if line.strip()]
 
-    # We expect at least two logs from the middleware: request and response
-    # Plus potentially others (from router, etc.)
-
     request_logs = [log for log in log_lines if isinstance(log.get("message"), str) and "POST" in log.get("message")]
     response_logs = [
         log for log in log_lines if isinstance(log.get("message"), str) and "STATUS_CODE: 200" in log.get("message")

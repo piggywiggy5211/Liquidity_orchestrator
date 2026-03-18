@@ -40,15 +40,6 @@ def test_scoring_logic_ranking(service):
 
         plan = service._build_execution_plan(quotes, order_id=111)
 
-        # Score calculation (Weights: fee=0.4, latency=0.1, timeout=0.5):
-        # fee_rate score: A:10, B:5.737, C:1
-        # latency score: A:1, B:1, C:10
-        # timeout score: A:1, B:10, C:10
-
-        # ProviderA: 10*0.4 + 1*0.1 + 1*0.5 = 4.0 + 0.1 + 0.5 = 4.6
-        # ProviderB: 5.737*0.4 + 1*0.1 + 10*0.5 = 2.295 + 0.1 + 5.0 = 7.395
-        # ProviderC: 1*0.4 + 10*0.1 + 10*0.5 = 0.4 + 1.0 + 5.0 = 6.4
-
         # Expected order: ProviderB, ProviderC, ProviderA
         assert plan[0].provider_name == "ProviderB"
         assert plan[1].provider_name == "ProviderC"

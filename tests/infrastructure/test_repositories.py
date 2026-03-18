@@ -43,5 +43,4 @@ async def test_get_all_functionality(db_session, session_factory):
             assert isinstance(model, Order)
             dto = OrderDTO.model_validate(model)
             assert isinstance(dto, OrderDTO)
-            # The order in get_all might not be guaranteed, but let's assume it matches for now or we just check content
             assert dto.incoming_amount == Decimal("100")

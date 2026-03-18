@@ -43,9 +43,6 @@ async def test_outbox_atomicity_rollback(db_session, session_factory):
     with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
         mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "test-ref-123"}
 
-        # Configure commit mock so that the first transaction (setting PROCESSING) passes really,
-        # while subsequent ones (fixing result or switching to FAILED) throw an error.
-        # This allows checking that the first transaction is committed, and the second is rolled back.
         real_commit = uow.commit
 
         async def mock_commit_side_effect():
@@ -72,7 +69,7 @@ async def test_outbox_atomicity_rollback(db_session, session_factory):
         stmt = select(Outbox).where(Outbox.order_id == order_id)
         res = await session.execute(stmt)
         outbox_records = res.scalars().all()
-        assert len(outbox_records) == 0, f"Expected 0 outbox records, found {len(outbox_records)}"
+        assert len(outbox_records) == 0
 
 
 @pytest.mark.asyncio

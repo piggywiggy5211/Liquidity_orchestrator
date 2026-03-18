@@ -81,7 +81,6 @@ async def test_provider_stats_integration_in_execute_order(db_session, session_f
                 mock_exec_b.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref2"}
 
                 # Mock time to control latency measurement
-                # Mock time to control latency measurement
                 with patch("time.time") as mock_time, patch("time.perf_counter") as mock_perf:
                     t = 2000.0
                     p = 100.0
