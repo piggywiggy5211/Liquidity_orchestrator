@@ -10,8 +10,8 @@ This file contains instructions and standards for working on the **Liquidity Orc
 - **Testing:** Pytest (located in `tests/`)
 
 ## Architectural Principles
-- **Layered Architecture:** `app/api` -> `app/service` -> `app/database` (repositories/uow).
-- **Domain Models:** Clear separation into DTOs (`app/service/dto.py`, `app/domain/models.py`), DB models (`app/database/models/`), and API schemas (`app/api/schemas/`).
+- **Layered Architecture:** `app/entrypoints/fastapi` -> `app/service` -> `app/domain` (logic/models) -> `app/database` (infrastructure/repositories).
+- **Domain Models:** Clear separation into DTOs (`app/service/dto.py`), Domain Models (`app/domain/models.py`), DB models (`app/database/models/`), and API schemas (`app/entrypoints/fastapi/api/schemas/`).
 
 ## Development Rules
 - **Type Hinting:** Mandatory use of modern type annotations (Python 3.14+ PEP 695). Using `TypeVar` and `Generic` is prohibited in favor of the `class MyClass[T]:` syntax.

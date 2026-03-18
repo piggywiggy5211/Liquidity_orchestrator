@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 
-from app.api.deps import get_liquidity_service, validate_amount
-from app.api.schemas.quote import QuoteRequest, QuoteResponse
+from app.entrypoints.fastapi.api.deps import get_liquidity_service, validate_amount
+from app.entrypoints.fastapi.api.schemas.quote import QuoteRequest, QuoteResponse
 from app.service.dto import QuoteRequestDTO
 from app.service.liquidity_service import LiquidityService
 

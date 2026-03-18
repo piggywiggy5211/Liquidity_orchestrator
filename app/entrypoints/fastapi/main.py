@@ -10,7 +10,7 @@ from app.core.middleware.logging_request_response import RequestResponseLoggingM
 from app.core.tracer import init_tracer
 from app.database.db_helper import db_helper
 from app.database.models import map_models_sqlalchemy
-from app.router import api_router
+from app.entrypoints.fastapi.router import api_router
 
 
 setup_logger()

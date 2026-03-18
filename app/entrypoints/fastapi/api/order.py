@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
-from app.api.deps import get_liquidity_service, passes_idempotency_check, validate_amount
-from app.api.schemas.orders import OrderCreateRequest, OrderResponse
+from app.entrypoints.fastapi.api.deps import get_liquidity_service, passes_idempotency_check, validate_amount
+from app.entrypoints.fastapi.api.schemas.orders import OrderCreateRequest, OrderResponse
 from app.service.dto import OrderCreateDTO
 from app.service.liquidity_service import LiquidityService
 

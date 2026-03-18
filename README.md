@@ -133,7 +133,7 @@ uv run mypy .
 
 ## Running the Application
 ```bash
-uv run python -m app.main
+uv run python -m app.entrypoints.fastapi.main
 ```
 
 ## API Documentation

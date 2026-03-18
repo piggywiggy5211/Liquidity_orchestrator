@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from starlette.testclient import TestClient
 
-from app.api.deps import IDEMPOTENCY_SET
-from app.main import main_app
+from app.entrypoints.fastapi.api.deps import IDEMPOTENCY_SET
+from app.entrypoints.fastapi.main import main_app
 
 
 pytest_plugins = ["tests.db_fixtures"]

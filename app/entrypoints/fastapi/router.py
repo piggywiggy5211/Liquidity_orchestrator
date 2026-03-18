@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api import order, quote
+from app.entrypoints.fastapi.api import order, quote
 
 
 api_router = APIRouter(prefix="")

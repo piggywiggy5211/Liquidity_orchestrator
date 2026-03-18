@@ -1,13 +1,12 @@
-from datetime import datetime
 from decimal import Decimal
 
 from pydantic import Field, field_validator
 
-from app.api.schemas.base import Base
 from app.domain.enums import QuoteDirection
+from app.entrypoints.fastapi.api.schemas.base import Base
 
 
-class OrderCreateRequest(Base):
+class QuoteRequest(Base):
     direction: QuoteDirection
     pair: str = Field(
         ...,
@@ -19,8 +18,6 @@ class OrderCreateRequest(Base):
         ...,
         examples=[100, 150],
     )
-    incoming_account: str
-    outgoing_account: str
 
     @field_validator("pair", mode="before")
     @classmethod
@@ -30,23 +27,19 @@ class OrderCreateRequest(Base):
         return v
 
 
-class OrderResponse(Base):
-    id: int
-    status: str
-    direction: QuoteDirection
-    pair: str
+class QuoteResponse(Base):
     incoming_amount: Decimal = Field(
         ...,
         examples=[100],
     )
-    incoming_account: str
+    incoming_asset_code: str
     outgoing_amount: Decimal = Field(
         ...,
         examples=[98],
     )
-    outgoing_account: str
-    commission_amount: Decimal = Field(
+    outgoing_asset_code: str
+    fee_amount: Decimal = Field(
         ...,
         examples=[2],
     )
-    created_at: datetime
+    fee_asset_code: str
