@@ -1,21 +1,28 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from starlette.testclient import TestClient
 
 from app.api.deps import IDEMPOTENCY_SET
+from app.main import main_app
 
 
-# Register DB fixtures from the separate module
 pytest_plugins = ["tests.db_fixtures"]
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def clear_idempotency_set():
     IDEMPOTENCY_SET.clear()
     yield
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def mock_asyncio_sleep():
     with patch("asyncio.sleep", AsyncMock()):
         yield
+
+
+@pytest.fixture(scope="session")
+def client():
+    with TestClient(main_app) as c:
+        yield c

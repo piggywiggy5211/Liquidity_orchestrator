@@ -12,7 +12,7 @@ from app.service.providers import ExecutionStatus
 
 
 @pytest.mark.asyncio
-async def test_order_execution_full_cycle_success(db_session, session_factory):
+async def test_order_execution_full_cycle_success(db_session, session_factory, mock_asyncio_sleep):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     service = LiquidityService(uow, AsyncMock())
 
@@ -24,14 +24,12 @@ async def test_order_execution_full_cycle_success(db_session, session_factory):
         outgoing_account="acc2",
     )
 
-    # Mock sleep and random to make it fast and predictable
-    with patch("asyncio.sleep", AsyncMock()):
-        # Mock execute in BaseProvider
-        with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
-            mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "test-ref-123"}
+    # Mock execute in BaseProvider
+    with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
+        mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "test-ref-123"}
 
-            created = await service.create_order(order_in)
-            await service.execute_order(int(created.id))
+        created = await service.create_order(order_in)
+        await service.execute_order(int(created.id))
 
     # Verify results in DB
     async with session_factory() as session:
@@ -43,7 +41,7 @@ async def test_order_execution_full_cycle_success(db_session, session_factory):
 
 
 @pytest.mark.asyncio
-async def test_order_execution_retry_logic(db_session, session_factory):
+async def test_order_execution_retry_logic(db_session, session_factory, mock_asyncio_sleep):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     service = LiquidityService(uow, AsyncMock())
 
@@ -55,16 +53,15 @@ async def test_order_execution_retry_logic(db_session, session_factory):
         outgoing_account="acc2",
     )
 
-    with patch("asyncio.sleep", AsyncMock()):
-        with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
-            # First provider (in plan) will return TIMEOUT, second SUCCESS
-            mock_execute.side_effect = [
-                {"status": ExecutionStatus.TIMEOUT, "provider_ref": "ref-fail"},
-                {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref-success"},
-            ]
+    with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
+        # First provider (in plan) will return TIMEOUT, second SUCCESS
+        mock_execute.side_effect = [
+            {"status": ExecutionStatus.TIMEOUT, "provider_ref": "ref-fail"},
+            {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref-success"},
+        ]
 
-            created = await service.create_order(order_in)
-            await service.execute_order(int(created.id))
+        created = await service.create_order(order_in)
+        await service.execute_order(int(created.id))
 
     async with session_factory() as session:
         order = await session.get(Order, int(created.id))
@@ -75,7 +72,7 @@ async def test_order_execution_retry_logic(db_session, session_factory):
 
 
 @pytest.mark.asyncio
-async def test_order_execution_all_fail(db_session, session_factory):
+async def test_order_execution_all_fail(db_session, session_factory, mock_asyncio_sleep):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     service = LiquidityService(uow, AsyncMock())
 
@@ -87,13 +84,12 @@ async def test_order_execution_all_fail(db_session, session_factory):
         outgoing_account="acc2",
     )
 
-    with patch("asyncio.sleep", AsyncMock()):
-        with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
-            # All providers return FAIL
-            mock_execute.return_value = {"status": ExecutionStatus.FAIL, "provider_ref": "ref-fail"}
+    with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
+        # All providers return FAIL
+        mock_execute.return_value = {"status": ExecutionStatus.FAIL, "provider_ref": "ref-fail"}
 
-            created = await service.create_order(order_in)
-            await service.execute_order(int(created.id))
+        created = await service.create_order(order_in)
+        await service.execute_order(int(created.id))
 
     async with session_factory() as session:
         order = await session.get(Order, int(created.id))

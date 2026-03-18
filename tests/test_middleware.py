@@ -1,22 +1,17 @@
 import json
 
-from fastapi.testclient import TestClient
 
-from app.main import main_app
+def test_request_response_logging(capsys, client, clear_idempotency_set, mock_asyncio_sleep):
+    payload = {
+        "direction": "on-ramp",
+        "pair": "USDT-USD",
+        "amount": 100.0,
+        "incoming_account": "acct-1",
+        "outgoing_account": "acct-2",
+    }
+    response = client.post("/orders", json=payload, headers={"X-Api-Ts": "12345"})
 
-
-def test_request_response_logging(capsys):
-    with TestClient(main_app) as client:
-        payload = {
-            "direction": "on-ramp",
-            "pair": "USDT-USD",
-            "amount": 100.0,
-            "incoming_account": "acct-1",
-            "outgoing_account": "acct-2",
-        }
-        response = client.post("/orders", json=payload, headers={"X-Api-Ts": "12345"})
-
-        assert response.status_code == 200
+    assert response.status_code == 200
 
     captured = capsys.readouterr().out
     log_lines = [json.loads(line) for line in captured.splitlines() if line.strip()]
@@ -37,18 +32,17 @@ def test_request_response_logging(capsys):
     assert "span_id" in request_logs[0]
 
 
-def test_request_response_logging_with_iban(capsys):
-    with TestClient(main_app) as client:
-        # IBAN in headers or body
-        iban = "DE12345678901234567890"
-        payload = {
-            "direction": "on-ramp",
-            "pair": "USDT-USD",
-            "amount": 100.0,
-            "incoming_account": "acct-1",
-            "outgoing_account": iban,
-        }
-        client.post("/orders", json=payload, headers={"X-Api-Ts": "12345"})
+def test_request_response_logging_with_iban(capsys, client, clear_idempotency_set, mock_asyncio_sleep):
+    # IBAN in headers or body
+    iban = "DE12345678901234567890"
+    payload = {
+        "direction": "on-ramp",
+        "pair": "USDT-USD",
+        "amount": 100.0,
+        "incoming_account": "acct-1",
+        "outgoing_account": iban,
+    }
+    client.post("/orders", json=payload, headers={"X-Api-Ts": "12345"})
 
     captured = capsys.readouterr().out
     assert "DE12****7890" in captured

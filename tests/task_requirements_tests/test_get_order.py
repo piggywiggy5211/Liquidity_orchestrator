@@ -1,17 +1,5 @@
-import pytest
-from fastapi.testclient import TestClient
-
-from app.main import main_app
-
-
-@pytest.fixture
-def client():
-    with TestClient(main_app) as c:
-        yield c
-
-
-def test_get_order_success(client):
-    # 1. Create an order
+def test_create_and_get_order(client, clear_idempotency_set, mock_asyncio_sleep):
+    # 1. Create order
     payload = {
         "direction": "on-ramp",
         "pair": "USDT-USD",
@@ -24,7 +12,7 @@ def test_get_order_success(client):
     assert create_resp.status_code == 200
     order_id = create_resp.json()["id"]
 
-    # 2. Get the order
+    # 2. Get order
     get_resp = client.get(f"/orders/{order_id}")
     assert get_resp.status_code == 200
     data = get_resp.json()

@@ -4,25 +4,17 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
-from fastapi.testclient import TestClient
 
 from app.core.http_client import LoggingAsyncClient
 from app.core.logger.loguru_logger import serialize_json_log
 from app.core.sanitizers.http_saitazer import sanitize_headers
 from app.core.sanitizers.log_sanitizer import LogSanitizer, mask_iban
 from app.database.uow import UnitOfWorkSqlAlchemy
-from app.main import main_app
 from app.service.dto import QuoteRequestDTO
 from app.service.enums import OrderStatus, QuoteDirection
 from app.service.liquidity_service import LiquidityService
 from app.service.models import Order
 from app.service.providers import ExecutionStatus
-
-
-@pytest.fixture
-def client():
-    with TestClient(main_app) as c:
-        yield c
 
 
 def test_mask_iban():
@@ -76,24 +68,23 @@ def test_json_logging_format():
     assert "trace_id" in data
 
 
-def test_create_order_endpoint(client):
-    with patch("asyncio.sleep", AsyncMock()):
-        response = client.post(
-            "/orders",
-            json={
-                "direction": "on-ramp",
-                "pair": "USDT-USD",
-                "amount": 100.0,
-                "incoming_account": "acct-1",
-                "outgoing_account": "acct-2",
-            },
-            headers={"X-Api-Ts": "12345"},
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert "id" in data
-        assert data["status"] == "NEW"
-        assert data["incoming_account"] == "acct-1"
+def test_create_order_endpoint(client, mock_asyncio_sleep, clear_idempotency_set):
+    response = client.post(
+        "/orders",
+        json={
+            "direction": "on-ramp",
+            "pair": "USDT-USD",
+            "amount": 100.0,
+            "incoming_account": "acct-1",
+            "outgoing_account": "acct-2",
+        },
+        headers={"X-Api-Ts": "12345"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "id" in data
+    assert data["status"] == "NEW"
+    assert data["incoming_account"] == "acct-1"
 
 
 def test_get_quote_endpoint(client):
@@ -114,7 +105,7 @@ def test_get_quote_endpoint(client):
 
 
 @pytest.mark.asyncio
-async def test_liquidity_service(db_session, session_factory):
+async def test_liquidity_service(db_session, session_factory, mock_asyncio_sleep):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
     mock_http = AsyncMock()
     service = LiquidityService(uow, mock_http)
@@ -129,15 +120,14 @@ async def test_liquidity_service(db_session, session_factory):
         outgoing_account="acct-2",
     )
 
-    with patch("asyncio.sleep", AsyncMock()):
-        with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
-            mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref-123"}
+    with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
+        mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref-123"}
 
-            created = await service.create_order(order_in)
-            assert created.status == "NEW"
-            assert created.incoming_amount == Decimal("100.0")
-            assert created.outgoing_amount == Decimal("98.0")
-            await service.execute_order(int(created.id))
+        created = await service.create_order(order_in)
+        assert created.status == "NEW"
+        assert created.incoming_amount == Decimal("100.0")
+        assert created.outgoing_amount == Decimal("98.0")
+        await service.execute_order(int(created.id))
 
     async with session_factory() as session:
         order = await session.get(Order, int(created.id))
@@ -196,10 +186,9 @@ async def test_httpx_error_logging(capsys):
     assert "Connection refused" in out
 
 
-def test_http_client_in_lifespan():
+def test_http_client_in_lifespan(client):
     # Ensure httpx client is created globally in lifespan
-    with TestClient(main_app) as c:
-        assert hasattr(c.app.state, "http_client")
-        import httpx as _httpx
+    assert hasattr(client.app.state, "http_client")
+    import httpx as _httpx
 
-        assert isinstance(c.app.state.http_client, _httpx.AsyncClient)
+    assert isinstance(client.app.state.http_client, _httpx.AsyncClient)

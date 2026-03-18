@@ -1,16 +1,4 @@
-import pytest
-from fastapi.testclient import TestClient
-
-from app.main import main_app
-
-
-@pytest.fixture
-def client():
-    with TestClient(main_app) as c:
-        yield c
-
-
-def test_create_order_validation_fail(client):
+def test_create_order_validation_fail(client, clear_idempotency_set, mock_asyncio_sleep):
     response = client.post(
         "/orders",
         json={
@@ -26,7 +14,7 @@ def test_create_order_validation_fail(client):
     assert response.json()["detail"] == "Not allowed, amount over the limit"
 
 
-def test_create_order_validation_success(client):
+def test_create_order_validation_success(client, clear_idempotency_set, mock_asyncio_sleep):
     response = client.post(
         "/orders",
         json={
