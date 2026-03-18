@@ -12,7 +12,7 @@ from cachetools import TTLCache, keys
 from pydantic import BaseModel, Field
 
 from app.core.config import settings
-from app.service.enums import QuoteDirection
+from app.domain.enums import QuoteDirection
 
 
 class ExecutionStatus(str, Enum):

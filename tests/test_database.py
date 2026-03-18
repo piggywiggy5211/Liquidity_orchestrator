@@ -5,8 +5,8 @@ import pytest
 from sqlalchemy import select
 
 from app.database.uow import UnitOfWorkSqlAlchemy
-from app.service.enums import OrderStatus, OutboxEventType, QuoteDirection
-from app.service.models import Order, Outbox, Quote
+from app.domain.enums import OrderStatus, OutboxEventType, QuoteDirection
+from app.domain.models import Order, Outbox, Quote
 
 
 @pytest.mark.asyncio

@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, computed_field
 
-from .enums import OrderStatus, OutboxEventType, QuoteDirection
+from app.domain.enums import OrderStatus, OutboxEventType, QuoteDirection
 
 
 class BaseDTO(BaseModel):
@@ -32,13 +32,6 @@ class OrderCreateDTO(BaseDTO):
     amount: Decimal
     incoming_account: str
     outgoing_account: str
-
-
-class OrderExecutionResult(BaseDTO):
-    order_id: int
-    status: OrderStatus
-    quote_id: int | None = None
-    provider_ref: str | None = None
 
 
 class OrderDTO(BaseDTO):

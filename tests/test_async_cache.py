@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from app.service.enums import QuoteDirection
+from app.domain.enums import QuoteDirection
 from app.service.providers.provider_a import ProviderA
 from app.service.providers.provider_b import ProviderB
 

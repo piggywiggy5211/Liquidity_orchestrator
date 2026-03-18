@@ -26,8 +26,9 @@ async def setup_map_models():
 
 
 @pytest.fixture(scope="session")
-def test_db_type():
-    return os.getenv("TEST_DB_TYPE", TestDBType.TESTCONTAINER).upper()
+def test_db_type() -> TestDBType:
+    value = os.getenv("TEST_DB_TYPE", TestDBType.TESTCONTAINER.value)
+    return TestDBType(value)
 
 
 @pytest.fixture(scope="session")

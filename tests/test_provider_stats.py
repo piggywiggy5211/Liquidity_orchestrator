@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from app.database.uow import UnitOfWorkSqlAlchemy
+from app.domain.enums import QuoteDirection
 from app.service.dto import OrderCreateDTO, QuoteDTO
-from app.service.enums import QuoteDirection
 from app.service.liquidity_service import LiquidityService
 from app.service.mixins import ProviderStatsMixin
 from app.service.providers import ExecutionStatus

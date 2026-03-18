@@ -1,7 +1,6 @@
 from typing import Any, Callable, Optional, Protocol, Sequence
 
-from app.service.dto import OrderExecutionResult
-from app.service.models import Order, Outbox, Quote
+from .models import Order, Outbox, Quote
 
 
 class IRepository[ModelType](Protocol):
@@ -11,16 +10,14 @@ class IRepository[ModelType](Protocol):
 
     def add(self, instance: ModelType) -> None: ...
 
+    async def update(self, record_id: int, **kwargs: Any) -> None: ...
+
     async def delete(self, instance: ModelType) -> None: ...
-
-
-class IRepositoryOrder(IRepository[Order]):
-    async def set_execution_result(self, data: OrderExecutionResult) -> None: ...
 
 
 class IUnitOfWork(Protocol):
     @property
-    def orders(self) -> IRepositoryOrder: ...
+    def orders(self) -> IRepository[Order]: ...
     @property
     def quotes(self) -> IRepository[Quote]: ...
     @property

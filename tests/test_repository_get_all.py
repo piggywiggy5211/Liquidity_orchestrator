@@ -3,9 +3,9 @@ from decimal import Decimal
 import pytest
 
 from app.database.uow import UnitOfWorkSqlAlchemy
+from app.domain.enums import OrderStatus, QuoteDirection
+from app.domain.models import Order
 from app.service.dto import OrderDTO
-from app.service.enums import OrderStatus, QuoteDirection
-from app.service.models import Order
 
 
 @pytest.mark.asyncio
@@ -41,7 +41,7 @@ async def test_get_all_functionality(db_session, session_factory):
         # Check models content and to_dto conversion
         for model in models:
             assert isinstance(model, Order)
-            dto = model.to_dto()
+            dto = OrderDTO.model_validate(model)
             assert isinstance(dto, OrderDTO)
             # The order in get_all might not be guaranteed, but let's assume it matches for now or we just check content
             assert dto.incoming_amount == Decimal("100")

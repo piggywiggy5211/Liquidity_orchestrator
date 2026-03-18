@@ -1,6 +1,6 @@
 from sqlalchemy import JSON, Column, DateTime, Enum, ForeignKey, Integer, Table, func
 
-from app.service.enums import OutboxEventType
+from app.domain.enums import OutboxEventType
 
 from .registry import metadata
 

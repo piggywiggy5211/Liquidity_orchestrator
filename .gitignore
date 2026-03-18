@@ -5,5 +5,3 @@ test.db
 .output.txt
 __pycache__/
 pg_data/
-/GEMINI.md
-/.gemini/

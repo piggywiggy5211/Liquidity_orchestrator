@@ -1,6 +1,6 @@
-from typing import Optional, Sequence, Type
+from typing import Any, Optional, Sequence, Type
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -19,6 +19,15 @@ class BaseRepository[ModelType]:
 
     def add(self, instance: ModelType) -> None:
         self.session.add(instance)
+
+    async def update(self, record_id: int, **kwargs: Any) -> None:
+        stmt = (
+            update(self.model)
+            .where(self.model.id == record_id)  # type: ignore[attr-defined]
+            .values(**kwargs)
+            .execution_options(synchronize_session="fetch")
+        )
+        await self.session.execute(stmt)
 
     async def delete(self, instance: ModelType) -> None:
         await self.session.delete(instance)

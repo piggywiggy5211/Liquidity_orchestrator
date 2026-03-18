@@ -6,19 +6,18 @@ import pandas as pd
 from loguru import logger
 
 from app.core.config import settings
+from app.domain.enums import OrderStatus
+from app.domain.enums import OutboxEventType as OET
+from app.domain.interfaces import IUnitOfWork
+from app.domain.models import Order, Outbox, Quote
 from app.service.dto import (
     OrderCreateDTO,
     OrderDTO,
-    OrderExecutionResult,
     QuoteDTO,
     QuoteRequestDTO,
     QuoteResultDTO,
 )
-from app.service.enums import OrderStatus
-from app.service.enums import OutboxEventType as OET
-from app.service.interfaces import IUnitOfWork
 from app.service.mixins import ProviderStatsMixin
-from app.service.models import Order, Outbox, Quote
 from app.service.providers import PROVIDERS_LIST, PROVIDERS_MAP, ExecutionStatus, IProvider, OrderExecutionRequest
 
 
@@ -28,20 +27,27 @@ class LiquidityService(ProviderStatsMixin):
         self.http_client = http_client
 
     async def create_order(self, data: OrderCreateDTO) -> OrderDTO:
-        order = Order.from_create_dto(data, settings.service_fee)
-        async with self.uow:
-            self.uow.orders.add(order)
-            await self.uow.commit()
+        order = Order.create(
+            amount=data.amount,
+            direction=data.direction,
+            pair=data.pair,
+            incoming_account=data.incoming_account,
+            outgoing_account=data.outgoing_account,
+            commission_rate=settings.service_fee,
+        )
+        async with self.uow as u:
+            u.orders.add(order)
+            await u.commit()
             logger.info(f"Order created with id: {order.id}")
-            return order.to_dto()
+            return OrderDTO.model_validate(order)
 
     async def get_order(self, order_id: int) -> OrderDTO | None:
         """
         Retrieves an order by its ID from the database and returns it as a DTO.
         """
-        async with self.uow:
-            order_model = await self.uow.orders.get(order_id)
-            return order_model.to_dto() if order_model else None
+        async with self.uow as u:
+            order_model = await u.orders.get(order_id)
+            return OrderDTO.model_validate(order_model) if order_model else None
 
     async def execute_order(self, order_id: int) -> None:
         """
@@ -49,14 +55,14 @@ class LiquidityService(ProviderStatsMixin):
         and attempting execution with providers sequentially until successful.
         """
         logger.info(f"Executing order_id {order_id}")
-        async with self.uow:
-            order_model = await self.uow.orders.get(order_id)
+        async with self.uow as u:
+            order_model = await u.orders.get(order_id)
             if not order_model:
                 logger.error(f"Order {order_id} not found")
                 return
             order_model.status = OrderStatus.PROCESSING
-            await self.uow.commit()
-            order_dto = order_model.to_dto()
+            await u.commit()
+            order_dto = OrderDTO.model_validate(order_model)
 
         logger.info(f"Changed order_id {order_dto.id} status to {order_dto.status}")
         quotes = await self._fetch_quotes_from_providers(order_dto)
@@ -192,14 +198,14 @@ class LiquidityService(ProviderStatsMixin):
                 provider_name=provider_instance.__class__.__name__,
                 valid_until=res["valid_until"],
             )
-            async with self.uow:
-                self.uow.quotes.add(quote)
-                await self.uow.commit()
+            async with self.uow as u:
+                u.quotes.add(quote)
+                await u.commit()
                 logger.info(
                     f"Successfully saved quote id: {quote.id} from {provider_instance.__class__.__name__}"
                     f" for order_id {order.id}",
                 )
-                return quote.to_dto()
+                return QuoteDTO.model_validate(quote)
 
         except Exception as e:
             logger.warning(
@@ -227,12 +233,11 @@ class LiquidityService(ProviderStatsMixin):
 
     async def _handle_execution_response(self, order_id: int, response: dict, quote: QuoteDTO) -> bool:
         if response["status"] is ExecutionStatus.SUCCESS:
-            order_update_data = OrderExecutionResult(
-                order_id=order_id,
-                status=OrderStatus.COMPLETED,
-                quote_id=quote.id,
-                provider_ref=response["provider_ref"],
-            )
+            order_update_data = {
+                "status": OrderStatus.COMPLETED,
+                "quote_id": str(quote.id) if quote.id else None,
+                "provider_ref": response["provider_ref"],
+            }
             outbox_record = Outbox(
                 order_id=order_id,
                 event_type=OET.ORDER_COMPLETED,
@@ -246,10 +251,10 @@ class LiquidityService(ProviderStatsMixin):
                     "amount_out": float(quote.amount_out) if quote.amount_out else None,
                 },
             )
-            async with self.uow:
-                await self.uow.orders.set_execution_result(order_update_data)
-                self.uow.outbox.add(outbox_record)
-                await self.uow.commit()
+            async with self.uow as u:
+                await u.orders.update(order_id, **order_update_data)
+                u.outbox.add(outbox_record)
+                await u.commit()
                 return True
         else:
             outbox_record = Outbox(
@@ -262,17 +267,15 @@ class LiquidityService(ProviderStatsMixin):
                     "provider_name": quote.provider_name,
                 },
             )
-            async with self.uow:
-                self.uow.outbox.add(outbox_record)
-                await self.uow.commit()
+            async with self.uow as u:
+                u.outbox.add(outbox_record)
+                await u.commit()
         return False
 
     async def _set_order_failure(self, order_id: int) -> None:
-        async with self.uow:
-            await self.uow.orders.set_execution_result(
-                OrderExecutionResult(order_id=order_id, status=OrderStatus.FAILED),
-            )
-            self.uow.outbox.add(
+        async with self.uow as u:
+            await u.orders.update(order_id, status=OrderStatus.FAILED)
+            u.outbox.add(
                 Outbox(
                     order_id=order_id,
                     event_type=OET.ORDER_FAILED,
@@ -282,4 +285,4 @@ class LiquidityService(ProviderStatsMixin):
                     },
                 ),
             )
-            await self.uow.commit()
+            await u.commit()

@@ -10,10 +10,10 @@ from app.core.logger.loguru_logger import serialize_json_log
 from app.core.sanitizers.http_saitazer import sanitize_headers
 from app.core.sanitizers.log_sanitizer import LogSanitizer, mask_iban
 from app.database.uow import UnitOfWorkSqlAlchemy
+from app.domain.enums import OrderStatus, QuoteDirection
+from app.domain.models import Order
 from app.service.dto import QuoteRequestDTO
-from app.service.enums import OrderStatus, QuoteDirection
 from app.service.liquidity_service import LiquidityService
-from app.service.models import Order
 from app.service.providers import ExecutionStatus
 
 

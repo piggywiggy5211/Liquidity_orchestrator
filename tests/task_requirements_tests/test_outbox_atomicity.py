@@ -5,10 +5,10 @@ import pytest
 from sqlalchemy import select
 
 from app.database.uow import UnitOfWorkSqlAlchemy
+from app.domain.enums import OrderStatus, QuoteDirection
+from app.domain.models import Order, Outbox
 from app.service.dto import OrderCreateDTO, QuoteDTO
-from app.service.enums import OrderStatus, QuoteDirection
 from app.service.liquidity_service import LiquidityService
-from app.service.models import Order, Outbox
 from app.service.providers import ExecutionStatus
 
 

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, DateTime, Enum, Integer, Numeric, String, Table, func
 
-from app.service.enums import OrderStatus, QuoteDirection
+from app.domain.enums import OrderStatus, QuoteDirection
 
 from .registry import metadata
 

@@ -4,7 +4,7 @@ from decimal import Decimal
 from pydantic import Field, field_validator
 
 from app.api.schemas.base import Base
-from app.service.enums import QuoteDirection
+from app.domain.enums import QuoteDirection
 
 
 class OrderCreateRequest(Base):

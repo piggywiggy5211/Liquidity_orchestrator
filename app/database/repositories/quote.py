@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.service.models import Quote
+from app.domain.models import Quote
 
 from .base import BaseRepository
 

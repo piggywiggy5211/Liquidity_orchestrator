@@ -1,6 +1,6 @@
 from sqlalchemy.orm import configure_mappers
 
-from app.service.models import Order, Outbox, Quote
+from app.domain.models import Order, Outbox, Quote
 
 from .order import orders_table
 from .outbox import outbox_table
