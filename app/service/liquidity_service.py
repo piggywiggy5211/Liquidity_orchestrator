@@ -2,7 +2,6 @@ import asyncio
 import time
 
 import httpx
-import pandas as pd
 from loguru import logger
 
 from app.core.config import settings
@@ -10,6 +9,7 @@ from app.domain.enums import OrderStatus
 from app.domain.enums import OutboxEventType as OET
 from app.domain.interfaces import IUnitOfWork
 from app.domain.models import Order, Outbox, Quote
+from app.domain.routing import build_execution_plan
 from app.service.dto import (
     OrderCreateDTO,
     OrderDTO,
@@ -66,7 +66,12 @@ class LiquidityService(ProviderStatsMixin):
 
         logger.info(f"Changed order_id {order_dto.id} status to {order_dto.status}")
         quotes = await self._fetch_quotes_from_providers(order_dto)
-        execute_plan = self._build_execution_plan(quotes, order_dto.id)
+        execute_plan = build_execution_plan(
+            quotes=quotes,
+            average_latencies=self.average_latency,
+            timeout_percentages=self.timeout_percentage,
+            order_id=order_id,
+        )
 
         for quote in execute_plan:
             provider_cls = PROVIDERS_MAP.get(quote.provider_name)
@@ -102,69 +107,7 @@ class LiquidityService(ProviderStatsMixin):
             fee_asset_code=incoming_asset,
         )
 
-    def _build_execution_plan(self, quotes: list[QuoteDTO], order_id: int) -> list[QuoteDTO]:
-        logger.info(f"Building execution plan for order_id {order_id}")
-        if not quotes:
-            logger.warning(f"No quotes available for order_id {order_id}")
-            return []
-
-        # Prepare data for scoring
-        avg_latencies_by_providers = self.average_latency
-        timeout_percentages_by_providers = self.timeout_percentage
-
-        data = []
-        for q in quotes:
-            p_name = q.provider_name
-            data.append(
-                {
-                    "quote": q,
-                    "fee_rate": float(q.fee_rate),
-                    "latency": avg_latencies_by_providers.get(p_name, 0.0),
-                    "timeout": timeout_percentages_by_providers.get(p_name, 0.0),
-                },
-            )
-
-        df = pd.DataFrame(data)
-
-        def interpolate_score(series):
-            if series.max() == series.min():
-                return 10.0
-            # Linear interpolation: min -> 10, max -> 1 (lower is better for all our metrics)
-            min_score = 10.0
-            max_score = 1.0
-            return min_score + (max_score - min_score) * (series - series.min()) / (series.max() - series.min())
-
-        df["fee_score"] = interpolate_score(df["fee_rate"])
-        df["latency_score"] = interpolate_score(df["latency"])
-        df["timeout_score"] = interpolate_score(df["timeout"])
-
-        timeout_weight = 0.5
-        fee_weight = 0.4
-        latency_weight = 0.1
-
-        df["final_score"] = (
-            df["timeout_score"] * timeout_weight
-            + df["fee_score"] * fee_weight
-            + df["latency_score"] * latency_weight  # keep multiline
-        )
-
-        # Sort by final score descending
-        df = df.sort_values("final_score", ascending=False)
-
-        for index, row in df.iterrows():
-            logger.info(
-                f"Calculated score for quote_id {row['quote'].id},"
-                f" provider_name {row['quote'].provider_name},"
-                f" final_score {row['final_score']}"
-                "("
-                f" fee_rate {row['fee_rate']},"
-                f" latency {row['latency']},"
-                f" timeout {row['timeout']}"
-                ")"
-            )
-        return df["quote"].tolist()
-
-    async def _fetch_quotes_from_providers(self, order: OrderDTO) -> list[QuoteDTO]:
+    async def _fetch_quotes_from_providers(self, order: OrderDTO) -> list[Quote]:
         logger.info(f"Fetching quotes for order {order.id}")
         tasks = [
             asyncio.create_task(
@@ -181,7 +124,7 @@ class LiquidityService(ProviderStatsMixin):
         logger.info(f"Fetched {len(results)} quotes for order_id {order.id}")
         return results
 
-    async def _fetch_provider_quote(self, order: OrderDTO, provider_instance: IProvider) -> QuoteDTO | None:
+    async def _fetch_provider_quote(self, order: OrderDTO, provider_instance: IProvider) -> Quote | None:
         try:
             res = await provider_instance.get_quote(
                 direction=order.direction,
@@ -205,7 +148,7 @@ class LiquidityService(ProviderStatsMixin):
                     f"Successfully saved quote id: {quote.id} from {provider_instance.__class__.__name__}"
                     f" for order_id {order.id}",
                 )
-                return QuoteDTO.model_validate(quote)
+                return quote
 
         except Exception as e:
             logger.warning(
@@ -214,7 +157,7 @@ class LiquidityService(ProviderStatsMixin):
             )
             raise
 
-    def _build_provider_request(self, order_dto: OrderDTO, quote: QuoteDTO) -> OrderExecutionRequest:
+    def _build_provider_request(self, order_dto: OrderDTO, quote: Quote) -> OrderExecutionRequest:
         return OrderExecutionRequest(
             direction=order_dto.direction,
             pair=order_dto.pair,
@@ -231,7 +174,7 @@ class LiquidityService(ProviderStatsMixin):
         self._record_execution(provider_cls.__name__, latency, response["status"])
         return response
 
-    async def _handle_execution_response(self, order_id: int, response: dict, quote: QuoteDTO) -> bool:
+    async def _handle_execution_response(self, order_id: int, response: dict, quote: Quote) -> bool:
         if response["status"] is ExecutionStatus.SUCCESS:
             order_update_data = {
                 "status": OrderStatus.COMPLETED,
