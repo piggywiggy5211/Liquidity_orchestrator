@@ -6,7 +6,7 @@ import pytest
 from app.database.uow import UnitOfWorkSqlAlchemy
 from app.domain.enums import OrderStatus, QuoteDirection
 from app.domain.models import Order
-from app.service.dto import OrderCreateDTO, QuoteRequestDTO
+from app.service.dto import OrderCreateDTO, QuoteDTO, QuoteRequestDTO
 from app.service.liquidity_service import LiquidityService
 from app.service.providers import ExecutionStatus
 
@@ -25,9 +25,21 @@ async def test_liquidity_service_basic_flow(db_session, session_factory, mock_as
         outgoing_account="acct-2",
     )
 
-    with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
+    with patch("app.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock) as mock_execute, \
+         patch("app.service.providers.provider_b.ProviderB.execute", new=mock_execute), \
+         patch("app.service.providers.provider_c.ProviderC.execute", new=mock_execute):
         mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref-123"}
 
+        quote = QuoteDTO(
+            id=1,
+            provider_name="ProviderA",
+            amount_in=Decimal("100"),
+            amount_out=Decimal("100"),
+            fee_rate=Decimal("0.02"),
+            direction=order_in.direction,
+            pair=order_in.pair,
+        )
+        service._fetch_quotes_from_providers = AsyncMock(return_value=[quote])
         created = await service.create_order(order_in)
         assert created.status == "NEW"
         assert created.incoming_amount == Decimal("100.0")
@@ -59,9 +71,21 @@ async def test_order_execution_full_cycle_success(db_session, session_factory, m
         outgoing_account="acc2",
     )
 
-    with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
+    with patch("app.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock) as mock_execute, \
+         patch("app.service.providers.provider_b.ProviderB.execute", new=mock_execute), \
+         patch("app.service.providers.provider_c.ProviderC.execute", new=mock_execute):
         mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "test-ref-123"}
 
+        quote = QuoteDTO(
+            id=1,
+            provider_name="ProviderA",
+            amount_in=Decimal("100"),
+            amount_out=Decimal("100"),
+            fee_rate=Decimal("0.02"),
+            direction=order_in.direction,
+            pair=order_in.pair,
+        )
+        service._fetch_quotes_from_providers = AsyncMock(return_value=[quote])
         created = await service.create_order(order_in)
         await service.execute_order(int(created.id))
 
@@ -86,12 +110,33 @@ async def test_order_execution_retry_logic(db_session, session_factory, mock_asy
         outgoing_account="acc2",
     )
 
-    with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
+    with patch("app.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock) as mock_execute, \
+         patch("app.service.providers.provider_b.ProviderB.execute", new=mock_execute), \
+         patch("app.service.providers.provider_c.ProviderC.execute", new=mock_execute):
         mock_execute.side_effect = [
             {"status": ExecutionStatus.TIMEOUT, "provider_ref": "ref-fail"},
             {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref-success"},
         ]
 
+        quote1 = QuoteDTO(
+            id=1,
+            provider_name="ProviderA",
+            amount_in=Decimal("100"),
+            amount_out=Decimal("100"),
+            fee_rate=Decimal("0.02"),
+            direction=order_in.direction,
+            pair=order_in.pair,
+        )
+        quote2 = QuoteDTO(
+            id=2,
+            provider_name="ProviderB",
+            amount_in=Decimal("100"),
+            amount_out=Decimal("100"),
+            fee_rate=Decimal("0.02"),
+            direction=order_in.direction,
+            pair=order_in.pair,
+        )
+        service._fetch_quotes_from_providers = AsyncMock(return_value=[quote1, quote2])
         created = await service.create_order(order_in)
         await service.execute_order(int(created.id))
 
@@ -115,9 +160,21 @@ async def test_order_execution_all_fail(db_session, session_factory, mock_asynci
         outgoing_account="acc2",
     )
 
-    with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
-        mock_execute.return_value = {"status": ExecutionStatus.FAIL, "provider_ref": "ref-fail"}
+    with patch("app.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock) as mock_execute, \
+         patch("app.service.providers.provider_b.ProviderB.execute", new=mock_execute), \
+         patch("app.service.providers.provider_c.ProviderC.execute", new=mock_execute):
+        mock_execute.return_value = {"status": ExecutionStatus.DECLINE, "provider_ref": "ref-fail"}
 
+        quote = QuoteDTO(
+            id=1,
+            provider_name="ProviderA",
+            amount_in=Decimal("100"),
+            amount_out=Decimal("100"),
+            fee_rate=Decimal("0.02"),
+            direction=order_in.direction,
+            pair=order_in.pair,
+        )
+        service._fetch_quotes_from_providers = AsyncMock(return_value=[quote])
         created = await service.create_order(order_in)
         await service.execute_order(int(created.id))
 

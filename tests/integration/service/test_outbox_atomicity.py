@@ -40,7 +40,7 @@ async def test_outbox_atomicity_rollback(db_session, session_factory):
     service._fetch_quotes_from_providers = AsyncMock(return_value=[quote])
 
     # Mock provider execution as successful
-    with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
+    with patch("app.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock) as mock_execute, patch("app.service.providers.provider_b.ProviderB.execute", new=mock_execute), patch("app.service.providers.provider_c.ProviderC.execute", new=mock_execute):
         mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "test-ref-123"}
 
         real_commit = uow.commit
@@ -101,7 +101,7 @@ async def test_outbox_atomicity_success(db_session, session_factory):
     )
     service._fetch_quotes_from_providers = AsyncMock(return_value=[quote])
 
-    with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
+    with patch("app.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock) as mock_execute, patch("app.service.providers.provider_b.ProviderB.execute", new=mock_execute), patch("app.service.providers.provider_c.ProviderC.execute", new=mock_execute):
         mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "success-ref"}
 
         await service.execute_order(order_id)

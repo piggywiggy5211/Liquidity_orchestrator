@@ -13,7 +13,6 @@ from app.domain.routing import build_execution_plan
 from app.service.dto import (
     OrderCreateDTO,
     OrderDTO,
-    QuoteDTO,
     QuoteRequestDTO,
     QuoteResultDTO,
 )

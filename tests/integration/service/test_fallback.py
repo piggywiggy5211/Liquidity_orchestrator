@@ -68,7 +68,7 @@ async def test_fallback_best_fails_next_succeeds(db_session, session_factory):
         mock_lat.return_value = mock_latency
         mock_tout.return_value = mock_timeouts
 
-        with patch("app.service.providers.base.BaseProvider.execute", new_callable=AsyncMock) as mock_execute:
+        with patch("app.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock) as mock_execute, patch("app.service.providers.provider_b.ProviderB.execute", new=mock_execute), patch("app.service.providers.provider_c.ProviderC.execute", new=mock_execute):
             mock_execute.side_effect = [
                 {"status": ExecutionStatus.TIMEOUT, "provider_ref": "ref-fail-a"},
                 {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref-success-b"},

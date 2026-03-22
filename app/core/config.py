@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     max_order_amount: Decimal = Decimal("1000")
     quote_ttl: int = 60
     stats_window_seconds: int = 60
+    mock_provider_url: str = "http://localhost:8001"
 
     model_config = SettingsConfigDict(
         env_file=(".env",),
