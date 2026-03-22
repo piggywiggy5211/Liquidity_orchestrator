@@ -1,33 +1,14 @@
 [project]
-name = "liquidity-orchestrator"
+name = "liquidity-orchestrator-workspace"
 version = "0.1.0"
-description = "Example of liquidity Orchestrator for Onramp/Offramp (multi-provider routing)"
 requires-python = ">=3.14"
-dependencies = [
-    "aiosqlite~=0.22.1",
-    "alembic~=1.18.4",
-    "cachetools~=7.0.1",
-    "fastapi~=0.128.6",
-    "httpx~=0.28.1",
-    "loguru~=0.7.3",
-    "opentelemetry-api~=1.39.1",
-    "opentelemetry-instrumentation-fastapi~=0.60b1",
-    "opentelemetry-instrumentation-sqlalchemy~=0.60b1",
-    "opentelemetry-sdk~=1.39.1",
-    "pydantic-settings~=2.12.0",
-    "pytest~=9.0.2",
-    "pytest-asyncio~=1.3.0",
-    "sqlalchemy~=2.0.46",
-    "uvicorn~=0.40.0",
-    "pandas~=3.0.0",
-    "mypy~=1.19.1",
-    "ruff~=0.15.4",
-    "diagrams>=0.25.1",
-    "asyncpg>=0.31.0",
-]
+dependencies = []
+
+[tool.uv.workspace]
+members = ["projects/*"]
 
 [tool.pytest.ini_options]
-pythonpath = ["."]
+pythonpath = ["projects/liquidity_orchestrator", "projects"]
 asyncio_mode = "auto"
 asyncio_default_test_loop_scope = "session"
 
@@ -56,12 +37,3 @@ lines-after-imports = 2
 line-ending = "auto"
 quote-style = "double"
 exclude = ["*.pyi"]
-
-[dependency-groups]
-dev = [
-    "testcontainers[postgres]>=4.14.1",
-    "types-cachetools>=6.2.0.20251022",
-]
-
-[tool.uv.workspace]
-members = ["mock_providers"]

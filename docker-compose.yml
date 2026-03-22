@@ -20,7 +20,7 @@ services:
   mock_providers:
     build:
       context: .
-      dockerfile: mock_providers/Dockerfile
+      dockerfile: docker_files/mock_providers.Dockerfile
     container_name: mock_providers
     ports:
       - "8001:8001"

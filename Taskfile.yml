@@ -2,17 +2,25 @@ version: '3'
 
 tasks:
   check:
-    deps: [ pytest, ruff, mypy ]
+    desc: Run all checks (tests, linter, type hints)
+    deps: [ pytest:liquidity, pytest:mock, ruff, mypy ]
     aliases: [ x ]
   mypy:
+    desc: Run type checking for all projects
     cmds:
-      - uv run mypy .
+      - uv run mypy projects/
   ruff:
+    desc: Run linters and formatters
     cmds:
-      - uv run ruff check --fix
-      - uv run ruff format
-  pytest:
+      - uv run ruff check projects/ --fix
+      - uv run ruff format projects/
+  pytest:liquidity:
+    desc: Run tests ONLY for the main application
     cmds:
-      - uv run pytest -vv
+      - uv run --package liquidity-orchestrator pytest -vv
+  pytest:mock:
+    desc: Run tests ONLY for mock providers
+    cmds:
+      - uv run --package mock-providers pytest -vv
 
 dotenv: [ '.env' ]

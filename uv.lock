@@ -10,6 +10,7 @@ resolution-markers = [
 [manifest]
 members = [
     "liquidity-orchestrator",
+    "liquidity-orchestrator-workspace",
     "mock-providers",
 ]
 
@@ -393,7 +394,7 @@ wheels = [
 [[package]]
 name = "liquidity-orchestrator"
 version = "0.1.0"
-source = { virtual = "." }
+source = { virtual = "projects/liquidity_orchestrator" }
 dependencies = [
     { name = "aiosqlite" },
     { name = "alembic" },
@@ -454,6 +455,11 @@ dev = [
 ]
 
 [[package]]
+name = "liquidity-orchestrator-workspace"
+version = "0.1.0"
+source = { virtual = "." }
+
+[[package]]
 name = "loguru"
 version = "0.7.3"
 source = { registry = "https://pypi.org/simple" }
@@ -511,7 +517,7 @@ wheels = [
 [[package]]
 name = "mock-providers"
 version = "0.1.0"
-source = { virtual = "mock_providers" }
+source = { virtual = "projects/mock_providers" }
 dependencies = [
     { name = "cachetools" },
     { name = "fastapi" },
