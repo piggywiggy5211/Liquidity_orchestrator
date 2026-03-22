@@ -20,15 +20,8 @@ services:
   mock_providers:
     build:
       context: .
-      dockerfile_inline: |
-        FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim
-        WORKDIR /app
-        COPY . /app
-        RUN uv sync --frozen
-        CMD ["uv", "run", "python", "-m", "mock_providers.main"]
+      dockerfile: mock_providers/Dockerfile
     container_name: mock_providers
     ports:
       - "8001:8001"
-    volumes:
-      - .:/app
 

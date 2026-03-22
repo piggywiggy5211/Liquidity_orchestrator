@@ -133,7 +133,10 @@ uv run mypy .
 
 ## Running the Application
 ```bash
+# Main application
 uv run python -m app.entrypoints.fastapi.main
+# Mock providers (as a workspace package)
+uv run --package mock-providers python -m mock_providers.main```
 ```
 
 ## API Documentation

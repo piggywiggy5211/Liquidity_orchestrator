@@ -10,7 +10,8 @@ This is a standalone mock service simulating external liquidity providers (Provi
 ## Running the Service
 You can run the service locally using `uv`:
 ```bash
-uv run python -m mock_providers.main
+# Running from the workspace root
+uv run --package mock-providers python -m mock_providers.main
 ```
 The service will start on port `8001`.
 

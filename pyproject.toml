@@ -62,3 +62,6 @@ dev = [
     "testcontainers[postgres]>=4.14.1",
     "types-cachetools>=6.2.0.20251022",
 ]
+
+[tool.uv.workspace]
+members = ["mock_providers"]
