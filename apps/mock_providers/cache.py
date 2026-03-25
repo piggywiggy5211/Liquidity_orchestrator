@@ -2,13 +2,13 @@ from functools import wraps
 from typing import Callable
 
 from cachetools import TTLCache, keys
-from config import QUOTE_TTL
+from config import settings
 
 
 CACHES: dict[str, TTLCache] = {
-    "a": TTLCache(maxsize=1024, ttl=QUOTE_TTL),
-    "b": TTLCache(maxsize=1024, ttl=QUOTE_TTL),
-    "c": TTLCache(maxsize=1024, ttl=QUOTE_TTL),
+    "a": TTLCache(maxsize=1024, ttl=settings.quote_ttl),
+    "b": TTLCache(maxsize=1024, ttl=settings.quote_ttl),
+    "c": TTLCache(maxsize=1024, ttl=settings.quote_ttl),
 }
 
 

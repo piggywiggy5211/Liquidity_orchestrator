@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from config import QUOTE_TTL, ProviderConfig
+from config import ProviderConfig, settings
 from domain.enums import QuoteDirection
 from schemas import ExecuteResponse, ExecutionStatus, OrderExecutionRequest, QuoteResponse
 
@@ -20,7 +20,7 @@ def generate_quote(
     calc_amount_in = amount_out / (Decimal("1") - fee_rate)
     calc_amount_out = amount_out
 
-    valid_until = datetime.now() + timedelta(seconds=QUOTE_TTL)
+    valid_until = datetime.now() + timedelta(seconds=settings.quote_ttl)
     return QuoteResponse(
         pair=pair,
         direction=direction,
