@@ -9,7 +9,7 @@ from lib.http_client import create_http_client
 from lib.logger.logger import setup_logger
 from lib.middleware.logger_context import LoggerContextMiddleware
 from lib.middleware.logging_request_response import RequestResponseLoggingMiddleware
-from lib.tracer import init_tracer
+from lib.tracer import init_base_tracer, instrument_db, instrument_fastapi
 
 
 setup_logger(
@@ -40,7 +40,9 @@ def create_app() -> FastAPI:
     app.add_middleware(RequestResponseLoggingMiddleware)
     app.add_middleware(LoggerContextMiddleware)
 
-    init_tracer(app)
+    init_base_tracer()
+    instrument_fastapi(app)
+    instrument_db()
     # routers
     app.include_router(api_router)
     return app

@@ -1,11 +1,32 @@
 from opentelemetry import trace
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
 
 
-def init_tracer(app) -> None:
+def init_base_tracer() -> None:
+    """Initialize the basic TracerProvider."""
     provider = TracerProvider()
     trace.set_tracer_provider(provider)
-    FastAPIInstrumentor.instrument_app(app)
-    SQLAlchemyInstrumentor().instrument()
+
+
+def instrument_fastapi(app) -> None:
+    """Instrument a FastAPI application. Requires the 'fastapi' extra."""
+    try:
+        from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
+        FastAPIInstrumentor.instrument_app(app)
+    except ImportError:
+        import logging
+
+        logging.warning("FastAPIInstrumentor not found. Did you install lib[fastapi]?")
+
+
+def instrument_db() -> None:
+    """Instrument SQLAlchemy. Requires the 'db' extra."""
+    try:
+        from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+
+        SQLAlchemyInstrumentor().instrument()
+    except ImportError:
+        import logging
+
+        logging.warning("SQLAlchemyInstrumentor not found. Did you install lib[db]?")
