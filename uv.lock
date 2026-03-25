@@ -357,6 +357,7 @@ dependencies = [
     { name = "loguru" },
     { name = "opentelemetry-api" },
     { name = "opentelemetry-sdk" },
+    { name = "pydantic-settings" },
 ]
 
 [package.optional-dependencies]
@@ -381,6 +382,7 @@ requires-dist = [
     { name = "opentelemetry-instrumentation-fastapi", marker = "extra == 'fastapi'", specifier = ">=0.60b1,<1.0.0" },
     { name = "opentelemetry-instrumentation-sqlalchemy", marker = "extra == 'db'", specifier = ">=0.60b1,<1.0.0" },
     { name = "opentelemetry-sdk", specifier = ">=1.39.1,<2.0.0" },
+    { name = "pydantic-settings", specifier = ">=2.12.0,<3.0.0" },
     { name = "uvicorn", marker = "extra == 'fastapi'", specifier = ">=0.40.0,<0.41.0" },
 ]
 provides-extras = ["fastapi", "http-client", "db"]
@@ -432,7 +434,6 @@ dependencies = [
     { name = "cachetools" },
     { name = "lib", extra = ["db", "fastapi", "http-client"] },
     { name = "pandas" },
-    { name = "pydantic-settings" },
     { name = "sqlalchemy" },
 ]
 
@@ -443,7 +444,6 @@ requires-dist = [
     { name = "cachetools", specifier = ">=7.0.1,<8.0.0" },
     { name = "lib", extras = ["fastapi", "http-client", "db"], editable = "lib" },
     { name = "pandas", specifier = ">=3.0.0,<4.0.0" },
-    { name = "pydantic-settings", specifier = ">=2.12.0,<3.0.0" },
     { name = "sqlalchemy", specifier = ">=2.0.46,<3.0.0" },
 ]
 
@@ -541,14 +541,12 @@ source = { virtual = "apps/mock_providers" }
 dependencies = [
     { name = "cachetools" },
     { name = "lib", extra = ["fastapi"] },
-    { name = "pydantic-settings" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "cachetools", specifier = ">=7.0.1,<8.0.0" },
     { name = "lib", extras = ["fastapi"], editable = "lib" },
-    { name = "pydantic-settings", specifier = ">=2.12.0,<3.0.0" },
 ]
 
 [[package]]
