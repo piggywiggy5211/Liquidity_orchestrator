@@ -2,8 +2,7 @@ from functools import wraps
 from typing import Callable
 
 from cachetools import TTLCache, keys
-
-from .config import QUOTE_TTL
+from config import QUOTE_TTL
 
 
 CACHES: dict[str, TTLCache] = {

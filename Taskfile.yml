@@ -3,24 +3,46 @@ version: '3'
 tasks:
   check:
     desc: Run all checks (tests, linter, type hints)
-    deps: [ pytest:liquidity, pytest:mock, ruff, mypy ]
+    deps: [ test:orchestrator, test:mock, ruff, mypy ]
     aliases: [ x ]
+    
   mypy:
-    desc: Run type checking for all projects
+    desc: Run type checking for all apps
     cmds:
-      - uv run mypy projects/
+      - uv run mypy apps/
+      
   ruff:
     desc: Run linters and formatters
     cmds:
-      - uv run ruff check projects/ --fix
-      - uv run ruff format projects/
-  pytest:liquidity:
+      - uv run ruff check apps/ --fix
+      - uv run ruff format apps/
+      
+  test:orchestrator:
     desc: Run tests ONLY for the main application
+    dir: apps/liquidity_orchestrator
     cmds:
-      - uv run --package liquidity-orchestrator pytest -vv
-  pytest:mock:
+      - uv run pytest -vv
+      
+  test:mock:
     desc: Run tests ONLY for mock providers
+    dir: apps/mock_providers
     cmds:
-      - uv run --package mock-providers pytest -vv
+      - uv run pytest -vv
+      
+  test:all:
+    desc: Run all tests in the monorepo
+    cmds:
+      - task: test:orchestrator
+      - task: test:mock
+      
+  run:orchestrator:
+    desc: Run main application (Liquidity Orchestrator)
+    cmds:
+      - uv run --package liquidity-orchestrator python -m entrypoints.fastapi.main
+      
+  run:mock:
+    desc: Run mock providers application
+    cmds:
+      - uv run --package mock-providers python -m mock_providers.main
 
 dotenv: [ '.env' ]

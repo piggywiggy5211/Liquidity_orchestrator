@@ -101,45 +101,44 @@ The project uses `uv` for dependency management.
 uv sync
 ```
 
-## Database Management (Alembic)
-Migrations are located in the `app/database/alembic` directory.
+## Running the Application
 
-### Running Migrations
+### 1. Docker Infrastructure
+
+Docker is required to run the PostgreSQL and mock_providers service.
+
+To start the infrastructure, run:
+```bash
+docker compose up -d
+```
+
+### 2. Database Management (Alembic)
+Migrations are located in the `apps/liquidity_orchestrator/database/alembic` directory.
+
 To apply all migrations to the database:
 ```bash
 uv run alembic upgrade head
 ```
 
-### Creating a New Migration
-To automatically generate a migration based on changes in SQLAlchemy models:
+### 3. Starting Services
+
+**Liquidity Orchestrator (Main App)**
 ```bash
-uv run alembic revision --autogenerate -m "your description"
-```
-
-## Testing
-### Running All Tests
-```bash
-uv run pytest -vv
-```
-
-### Running Linters auto format 
-```bash
-uv run ruff check --fix
-uv run ruff format
-uv run mypy .
-```
-
-
-
-## Running the Application
-```bash
-# Main application
-uv run python -m entrypoints.fastapi.main
-# Mock providers (as a workspace package)
-uv run --package mock-providers python -m mock_providers.main```
+task run:orchestrator
+# OR manually:
+uv run --package liquidity-orchestrator python -m entrypoints.fastapi.main
 ```
 
 ## API Documentation
 Once the application is running, you can access the interactive API documentation at:
 - **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+## Testing and Linting
+
+To run all checks (tests, linters, type hints) with a single command:
+```bash
+task check
+```
+
+*(You can also run specific tasks: `task test:all`, `task ruff`, `task mypy`)*

@@ -7,7 +7,7 @@ ENV UV_COMPILE_BYTECODE=1 \
 
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
-COPY projects/mock_providers/pyproject.toml ./projects/mock_providers/
+COPY apps/mock_providers/pyproject.toml ./apps/mock_providers/
 # Install ONLY the mock_providers dependencies
 RUN uv sync --frozen --no-dev --package mock-providers
 
@@ -22,7 +22,7 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy the required application source code
 # `app` is needed because mock_providers imports `app.domain.enums`
-COPY projects/liquidity_orchestrator/app ./app
-COPY projects/mock_providers ./mock_providers
+COPY apps/liquidity_orchestrator/app ./app
+COPY apps/mock_providers ./mock_providers
 
 CMD ["python", "-m", "mock_providers.main"]

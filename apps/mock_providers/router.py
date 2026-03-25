@@ -1,12 +1,11 @@
 from decimal import Decimal
 
+from cache import CACHES, async_cachedmethod
+from config import configs
 from domain.enums import QuoteDirection
 from fastapi import APIRouter, HTTPException, Path, Query, status
-
-from mock_providers.cache import CACHES, async_cachedmethod
-from mock_providers.config import configs
-from mock_providers.logic import execute_order, generate_quote
-from mock_providers.schemas import ExecuteResponse, ExecutionStatus, OrderExecutionRequest, QuoteResponse
+from logic import execute_order, generate_quote
+from schemas import ExecuteResponse, ExecutionStatus, OrderExecutionRequest, QuoteResponse
 
 
 router = APIRouter()

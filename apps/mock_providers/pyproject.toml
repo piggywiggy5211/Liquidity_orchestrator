@@ -8,3 +8,8 @@ dependencies = [
     "pydantic-settings~=2.12.0",
     "cachetools~=7.0.1",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "../liquidity_orchestrator"]
+asyncio_mode = "auto"
+asyncio_default_test_loop_scope = "session"

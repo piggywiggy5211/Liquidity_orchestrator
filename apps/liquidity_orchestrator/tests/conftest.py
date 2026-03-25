@@ -6,6 +6,9 @@ from entrypoints.fastapi.main import main_app
 from starlette.testclient import TestClient
 
 
+pytest_plugins = ["tests.db_fixtures"]
+
+
 @pytest.fixture()
 def clear_idempotency_set():
     IDEMPOTENCY_SET.clear()

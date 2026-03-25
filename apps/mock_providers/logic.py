@@ -4,10 +4,9 @@ import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+from config import QUOTE_TTL, ProviderConfig
 from domain.enums import QuoteDirection
-
-from mock_providers.config import QUOTE_TTL, ProviderConfig
-from mock_providers.schemas import ExecuteResponse, ExecutionStatus, OrderExecutionRequest, QuoteResponse
+from schemas import ExecuteResponse, ExecutionStatus, OrderExecutionRequest, QuoteResponse
 
 
 def generate_quote(

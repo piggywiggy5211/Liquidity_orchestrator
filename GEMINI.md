@@ -1,17 +1,17 @@
 # Gemini CLI Configuration
 
-This file contains instructions and standards for working on the **Liquidity Orchestrator** project.
+This file contains instructions and standards for working on the **Liquidity Orchestrator workspace** apps.
 
 ## Tech Stack
 - **Backend:** FastAPI (Python 3.14+)
 - **Dependency Management:** `uv`
 - **Database:** SQLAlchemy 2.0 (Async), Alembic
 - **Logging:** Loguru
-- **Testing:** Pytest (located in `tests/`)
+- **Testing:** Pytest (located in `app_name/tests/`)
 
 ## Architectural Principles
-- **Layered Architecture:** `app/entrypoints/fastapi` -> `app/service` -> `app/domain` (logic/models) -> `app/database` (infrastructure/repositories).
-- **Domain Models:** Clear separation into DTOs (`app/service/dto.py`), Domain Models (`app/domain/models.py`), DB models (`app/database/models/`), and API schemas (`app/entrypoints/fastapi/api/schemas/`).
+- **Layered Architecture:** `app_name/entrypoints/fastapi` -> `app_name/service` -> `app_name/domain` (logic/models) -> `app_name/database` (infrastructure/repositories).
+- **Domain Models:** Clear separation into DTOs (`app_name/service/dto.py`), Domain Models (`app_name/domain/models.py`), DB models (`app_name/database/models/`), and API schemas (`app_name/entrypoints/fastapi/api/schemas/`).
 
 ## Development Rules
 - **Type Hinting:** Mandatory use of modern type annotations (Python 3.14+ PEP 695). Using `TypeVar` and `Generic` is prohibited in favor of the `class MyClass[T]:` syntax.
@@ -21,8 +21,10 @@ This file contains instructions and standards for working on the **Liquidity Orc
 - **Validation:** Use Pydantic for input data validation.
 
 ## Project Commands
-- `uv run pytest` — run all tests.
-- `uv run alembic upgrade head` — apply DB migrations.
-- `uv run ruff check --fix` — check code with linter.
-- `uv run ruff format` — auto-format code.
-- `uv run mypy .` — type checking.
+- `task test:all` — run all tests across the workspace.
+- `uv run alembic upgrade head` — apply DB migrations (run from the `liquidity_orchestrator` directory).
+- `task ruff` — check and auto-format code with linter.
+- `task mypy` — run type checking.
+- `task check` — run all checks (tests, linters, type hints).
+- `task run:orchestrator` — run main application.
+- `task run:mock` — run mock providers application.

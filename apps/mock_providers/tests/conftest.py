@@ -1,7 +1,7 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from mock_providers.main import app
+from main import app
 from starlette.testclient import TestClient
 
 

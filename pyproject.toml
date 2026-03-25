@@ -5,12 +5,7 @@ requires-python = ">=3.14"
 dependencies = []
 
 [tool.uv.workspace]
-members = ["projects/*"]
-
-[tool.pytest.ini_options]
-pythonpath = ["projects/liquidity_orchestrator", "projects"]
-asyncio_mode = "auto"
-asyncio_default_test_loop_scope = "session"
+members = ["apps/*"]
 
 [tool.mypy]
 ignore_missing_imports = true
