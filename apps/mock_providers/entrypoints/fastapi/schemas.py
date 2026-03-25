@@ -1,8 +1,8 @@
 from decimal import Decimal
 from enum import Enum
 
-from domain.enums import QuoteDirection
 from pydantic import BaseModel, Field
+from service.enums import QuoteDirection
 
 
 class ExecutionStatus(str, Enum):

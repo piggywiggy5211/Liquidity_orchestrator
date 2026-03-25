@@ -44,12 +44,14 @@ tasks:
       
   run:orchestrator:
     desc: Run main application (Liquidity Orchestrator)
+    dir: apps/liquidity_orchestrator
     cmds:
-      - uv run --package liquidity-orchestrator python -m entrypoints.fastapi.main
+      - uv run python -m entrypoints.fastapi.main
       
   run:mock:
     desc: Run mock providers application
+    dir: apps/mock_providers
     cmds:
-      - uv run --package mock-providers python -m mock_providers.main
+      - uv run python -m entrypoints.fastapi.main
 
 dotenv: [ '.env' ]

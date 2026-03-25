@@ -2,7 +2,7 @@ from functools import wraps
 from typing import Callable
 
 from cachetools import TTLCache, keys
-from config import settings
+from core.config import settings
 
 
 CACHES: dict[str, TTLCache] = {

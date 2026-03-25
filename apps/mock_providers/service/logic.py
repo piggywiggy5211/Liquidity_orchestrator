@@ -4,9 +4,10 @@ import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from config import ProviderConfig, settings
-from domain.enums import QuoteDirection
-from schemas import ExecuteResponse, ExecutionStatus, OrderExecutionRequest, QuoteResponse
+from core.config import settings
+from entrypoints.fastapi.schemas import ExecuteResponse, ExecutionStatus, OrderExecutionRequest, QuoteResponse
+from service.enums import QuoteDirection
+from service.providers import ProviderConfig
 
 
 def generate_quote(

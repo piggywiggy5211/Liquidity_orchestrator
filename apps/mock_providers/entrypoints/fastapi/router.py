@@ -1,11 +1,11 @@
 from decimal import Decimal
 
-from cache import CACHES, async_cachedmethod
-from config import configs
-from domain.enums import QuoteDirection
+from entrypoints.fastapi.schemas import ExecuteResponse, ExecutionStatus, OrderExecutionRequest, QuoteResponse
 from fastapi import APIRouter, HTTPException, Path, Query, status
-from logic import execute_order, generate_quote
-from schemas import ExecuteResponse, ExecutionStatus, OrderExecutionRequest, QuoteResponse
+from service.cache import CACHES, async_cachedmethod
+from service.enums import QuoteDirection
+from service.logic import execute_order, generate_quote
+from service.providers import configs
 
 
 router = APIRouter()

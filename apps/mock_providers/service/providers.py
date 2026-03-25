@@ -1,4 +1,3 @@
-from lib.settings_config import FastAPISettings
 from pydantic import BaseModel
 
 
@@ -10,13 +9,6 @@ class ProviderConfig(BaseModel):
     timeout_prob: float
     ref_prefix: str
     fail_prob: float = 0.00003
-
-
-class Settings(FastAPISettings):
-    quote_ttl: int = 60
-
-
-settings = Settings()
 
 
 configs = {
