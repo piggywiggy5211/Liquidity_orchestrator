@@ -3,8 +3,8 @@ name = "mock-providers"
 version = "0.1.0"
 requires-python = ">=3.14"
 dependencies = [
-    "pydantic-settings~=2.12.0",
-    "cachetools~=7.0.1",
+    "pydantic-settings>=2.12.0,<3.0.0",
+    "cachetools>=7.0.1,<8.0.0",
     "lib[fastapi]",
 ]
 

@@ -16,15 +16,6 @@ members = [
 ]
 
 [[package]]
-name = "aiosqlite"
-version = "0.22.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/4e/8a/64761f4005f17809769d23e518d915db74e6310474e733e3593cfc854ef1/aiosqlite-0.22.1.tar.gz", hash = "sha256:043e0bd78d32888c0a9ca90fc788b38796843360c855a7262a532813133a0650", size = 14821, upload-time = "2025-12-23T19:25:43.997Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/00/b7/e3bf5133d697a08128598c8d0abc5e16377b51465a33756de24fa7dee953/aiosqlite-0.22.1-py3-none-any.whl", hash = "sha256:21c002eb13823fad740196c5a2e9d8e62f6243bd9e7e4a1f87fb5e44ecb4fceb", size = 17405, upload-time = "2025-12-23T19:25:42.139Z" },
-]
-
-[[package]]
 name = "alembic"
 version = "1.18.4"
 source = { registry = "https://pypi.org/simple" }
@@ -383,14 +374,14 @@ http-client = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastapi", marker = "extra == 'fastapi'", specifier = ">=0.128.8" },
-    { name = "httpx", marker = "extra == 'http-client'", specifier = ">=0.28.1" },
-    { name = "loguru", specifier = ">=0.7.3" },
-    { name = "opentelemetry-api", specifier = ">=1.39.1" },
-    { name = "opentelemetry-instrumentation-fastapi", marker = "extra == 'fastapi'", specifier = ">=0.60b1" },
-    { name = "opentelemetry-instrumentation-sqlalchemy", marker = "extra == 'db'", specifier = ">=0.60b1" },
-    { name = "opentelemetry-sdk", specifier = ">=1.39.1" },
-    { name = "uvicorn", marker = "extra == 'fastapi'", specifier = "~=0.40.0" },
+    { name = "fastapi", marker = "extra == 'fastapi'", specifier = ">=0.128.8,<0.129.0" },
+    { name = "httpx", marker = "extra == 'http-client'", specifier = ">=0.28.1,<0.29.0" },
+    { name = "loguru", specifier = ">=0.7.3,<0.8.0" },
+    { name = "opentelemetry-api", specifier = ">=1.39.1,<2.0.0" },
+    { name = "opentelemetry-instrumentation-fastapi", marker = "extra == 'fastapi'", specifier = ">=0.60b1,<1.0.0" },
+    { name = "opentelemetry-instrumentation-sqlalchemy", marker = "extra == 'db'", specifier = ">=0.60b1,<1.0.0" },
+    { name = "opentelemetry-sdk", specifier = ">=1.39.1,<2.0.0" },
+    { name = "uvicorn", marker = "extra == 'fastapi'", specifier = ">=0.40.0,<0.41.0" },
 ]
 provides-extras = ["fastapi", "http-client", "db"]
 
@@ -436,7 +427,6 @@ name = "liquidity-orchestrator"
 version = "0.1.0"
 source = { virtual = "apps/liquidity_orchestrator" }
 dependencies = [
-    { name = "aiosqlite" },
     { name = "alembic" },
     { name = "asyncpg" },
     { name = "cachetools" },
@@ -446,39 +436,24 @@ dependencies = [
     { name = "sqlalchemy" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "testcontainers" },
-    { name = "types-cachetools" },
-]
-
 [package.metadata]
 requires-dist = [
-    { name = "aiosqlite", specifier = "~=0.22.1" },
-    { name = "alembic", specifier = "~=1.18.4" },
-    { name = "asyncpg", specifier = ">=0.31.0" },
-    { name = "cachetools", specifier = "~=7.0.1" },
+    { name = "alembic", specifier = ">=1.18.4,<2.0.0" },
+    { name = "asyncpg", specifier = ">=0.31.0,<0.32.0" },
+    { name = "cachetools", specifier = ">=7.0.1,<8.0.0" },
     { name = "lib", extras = ["fastapi", "http-client", "db"], editable = "lib" },
-    { name = "pandas", specifier = "~=3.0.0" },
-    { name = "pydantic-settings", specifier = "~=2.12.0" },
-    { name = "sqlalchemy", specifier = "~=2.0.46" },
+    { name = "pandas", specifier = ">=3.0.0,<4.0.0" },
+    { name = "pydantic-settings", specifier = ">=2.12.0,<3.0.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.46,<3.0.0" },
 ]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "testcontainers", extras = ["postgres"], specifier = ">=4.14.1" },
-    { name = "types-cachetools", specifier = ">=6.2.0.20251022" },
-]
+dev = []
 
 [[package]]
 name = "liquidity-orchestrator-workspace"
 version = "0.1.0"
 source = { virtual = "." }
-dependencies = [
-    { name = "diagrams" },
-    { name = "mypy" },
-    { name = "ruff" },
-]
 
 [package.dev-dependencies]
 dev = [
@@ -487,22 +462,21 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
+    { name = "testcontainers" },
+    { name = "types-cachetools" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "diagrams", specifier = ">=0.25.1" },
-    { name = "mypy", specifier = "~=1.19.1" },
-    { name = "ruff", specifier = "~=0.15.4" },
-]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "diagrams", specifier = ">=0.25.1" },
-    { name = "mypy", specifier = "~=1.19.1" },
-    { name = "pytest", specifier = ">=9.0.2" },
-    { name = "pytest-asyncio", specifier = ">=1.3.0" },
-    { name = "ruff", specifier = "~=0.15.4" },
+    { name = "diagrams", specifier = ">=0.25.1,<0.26.0" },
+    { name = "mypy", specifier = ">=1.19.1,<2.0.0" },
+    { name = "pytest", specifier = ">=9.0.2,<10.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0,<2.0.0" },
+    { name = "ruff", specifier = ">=0.15.4,<0.16.0" },
+    { name = "testcontainers", extras = ["postgres"], specifier = ">=4.14.1,<5.0.0" },
+    { name = "types-cachetools", specifier = ">=6.2.0.20251022,<7.0.0" },
 ]
 
 [[package]]
@@ -572,9 +546,9 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cachetools", specifier = "~=7.0.1" },
+    { name = "cachetools", specifier = ">=7.0.1,<8.0.0" },
     { name = "lib", extras = ["fastapi"], editable = "lib" },
-    { name = "pydantic-settings", specifier = "~=2.12.0" },
+    { name = "pydantic-settings", specifier = ">=2.12.0,<3.0.0" },
 ]
 
 [[package]]
