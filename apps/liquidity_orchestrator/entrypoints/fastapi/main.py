@@ -1,18 +1,21 @@
 from contextlib import asynccontextmanager
 
 from core.config import settings
-from core.http_client import create_http_client
-from core.logger.logger import setup_logger
-from core.middleware.logger_context import LoggerContextMiddleware
-from core.middleware.logging_request_response import RequestResponseLoggingMiddleware
-from core.tracer import init_tracer
 from database.db_helper import db_helper
 from database.models import map_models_sqlalchemy
 from entrypoints.fastapi.router import api_router
 from fastapi import FastAPI
+from lib.http_client import create_http_client
+from lib.logger.logger import setup_logger
+from lib.middleware.logger_context import LoggerContextMiddleware
+from lib.middleware.logging_request_response import RequestResponseLoggingMiddleware
+from lib.tracer import init_tracer
 
 
-setup_logger()
+setup_logger(
+    log_level=settings.logging.log_level_value,
+    debug=settings.logging.debug,
+)
 map_models_sqlalchemy()
 
 

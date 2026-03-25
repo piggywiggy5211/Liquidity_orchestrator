@@ -1,6 +1,6 @@
 import httpx
 import pytest
-from core.http_client import LoggingAsyncClient
+from lib.http_client import LoggingAsyncClient
 
 
 @pytest.mark.asyncio

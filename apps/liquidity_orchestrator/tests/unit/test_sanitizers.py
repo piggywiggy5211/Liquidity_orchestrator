@@ -1,5 +1,5 @@
-from core.sanitizers.http_saitazer import sanitize_headers
-from core.sanitizers.log_sanitizer import LogSanitizer, mask_iban
+from lib.sanitizers.http_saitazer import sanitize_headers
+from lib.sanitizers.log_sanitizer import LogSanitizer, mask_iban
 
 
 def test_mask_iban():
