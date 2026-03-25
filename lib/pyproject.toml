@@ -1,0 +1,22 @@
+[project]
+name = "lib"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "piggywiggy5211", email = "waddles0618@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.128.8",
+    "httpx>=0.28.1",
+    "loguru>=0.7.3",
+    "opentelemetry-api>=1.39.1",
+    "opentelemetry-instrumentation-fastapi>=0.60b1",
+    "opentelemetry-instrumentation-sqlalchemy>=0.60b1",
+    "opentelemetry-sdk>=1.39.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.8.15,<0.9.0"]
+build-backend = "uv_build"
