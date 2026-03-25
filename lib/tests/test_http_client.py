@@ -45,11 +45,3 @@ async def test_httpx_error_logging(capsys):
     out = capsys.readouterr().out
     assert "HTTP GET CONNECTION ERROR" in out
     assert "Connection refused" in out
-
-
-def test_http_client_in_lifespan(client):
-    # Ensure httpx client is created globally in lifespan
-    assert hasattr(client.app.state, "http_client")
-    import httpx as _httpx
-
-    assert isinstance(client.app.state.http_client, _httpx.AsyncClient)

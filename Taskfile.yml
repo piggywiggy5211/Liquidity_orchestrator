@@ -3,7 +3,7 @@ version: '3'
 tasks:
   check:
     desc: Run all checks (tests, linter, type hints)
-    deps: [ test:orchestrator, test:mock, ruff, mypy ]
+    deps: [ test:lib, test:orchestrator, test:mock, ruff, mypy ]
     aliases: [ x ]
     
   mypy:
@@ -16,6 +16,12 @@ tasks:
     cmds:
       - uv run ruff check apps/ --fix
       - uv run ruff format apps/
+      
+  test:lib:
+    desc: Run tests ONLY for the shared library
+    dir: lib
+    cmds:
+      - uv run pytest -vv
       
   test:orchestrator:
     desc: Run tests ONLY for the main application
@@ -32,6 +38,7 @@ tasks:
   test:all:
     desc: Run all tests in the monorepo
     cmds:
+      - task: test:lib
       - task: test:orchestrator
       - task: test:mock
       
