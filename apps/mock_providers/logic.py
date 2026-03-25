@@ -31,7 +31,7 @@ def generate_quote(
     )
 
 
-async def execute_order(config: ProviderConfig, order: OrderExecutionRequest) -> ExecuteResponse:
+async def execute_order(config: ProviderConfig, _: OrderExecutionRequest) -> ExecuteResponse:
     latency = random.uniform(config.latency_min, config.latency_max)
     await asyncio.sleep(latency)
 
