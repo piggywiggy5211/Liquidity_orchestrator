@@ -1,7 +1,7 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from entrypoints.fastapi.main import app
+from mock_providers.entrypoints.fastapi.main import app
 from starlette.testclient import TestClient
 
 

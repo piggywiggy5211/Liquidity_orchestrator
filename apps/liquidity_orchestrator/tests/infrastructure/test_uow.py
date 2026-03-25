@@ -4,10 +4,10 @@ from decimal import Decimal
 from unittest.mock import AsyncMock
 
 import pytest
-from database.uow import UnitOfWorkSqlAlchemy
-from domain.enums import OrderStatus, OutboxEventType, QuoteDirection
-from domain.models import Order, Outbox, Quote
-from service.liquidity_service import LiquidityService
+from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
+from liquidity_orchestrator.domain.enums import OrderStatus, OutboxEventType, QuoteDirection
+from liquidity_orchestrator.domain.models import Order, Outbox, Quote
+from liquidity_orchestrator.service.liquidity_service import LiquidityService
 from sqlalchemy import select
 
 

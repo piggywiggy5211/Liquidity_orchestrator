@@ -4,9 +4,9 @@ from typing import Generator
 
 import pytest
 import pytest_asyncio
-from core.config import settings
-from database.db_helper import DatabaseHelper, db_helper
-from database.models import map_models_sqlalchemy, metadata
+from liquidity_orchestrator.core.config import settings
+from liquidity_orchestrator.database.db_helper import DatabaseHelper, db_helper
+from liquidity_orchestrator.database.models import map_models_sqlalchemy, metadata
 from sqlalchemy.pool import NullPool
 from testcontainers.postgres import PostgresContainer
 

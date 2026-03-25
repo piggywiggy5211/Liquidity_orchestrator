@@ -1,10 +1,10 @@
 from decimal import Decimal
 
 import pytest
-from database.uow import UnitOfWorkSqlAlchemy
-from domain.enums import OrderStatus, QuoteDirection
-from domain.models import Order
-from service.dto import OrderDTO
+from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
+from liquidity_orchestrator.domain.enums import OrderStatus, QuoteDirection
+from liquidity_orchestrator.domain.models import Order
+from liquidity_orchestrator.service.dto import OrderDTO
 
 
 @pytest.mark.asyncio

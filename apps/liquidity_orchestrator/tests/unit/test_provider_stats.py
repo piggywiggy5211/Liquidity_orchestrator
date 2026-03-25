@@ -2,12 +2,12 @@ from decimal import Decimal
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from database.uow import UnitOfWorkSqlAlchemy
-from domain.enums import QuoteDirection
-from service.dto import OrderCreateDTO, QuoteDTO
-from service.liquidity_service import LiquidityService
-from service.mixins import ProviderStatsMixin
-from service.providers import ExecutionStatus
+from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
+from liquidity_orchestrator.domain.enums import QuoteDirection
+from liquidity_orchestrator.service.dto import OrderCreateDTO, QuoteDTO
+from liquidity_orchestrator.service.liquidity_service import LiquidityService
+from liquidity_orchestrator.service.mixins import ProviderStatsMixin
+from liquidity_orchestrator.service.providers import ExecutionStatus
 
 
 @pytest.fixture(autouse=True)
@@ -73,38 +73,44 @@ async def test_provider_stats_integration_in_execute_order(db_session, session_f
         QuoteDTO(id=2, provider_name="ProviderB", fee_rate=Decimal("0.02"), amount_in=Decimal("102")),
     ]
 
-    with patch.object(LiquidityService, "_fetch_quotes_from_providers", return_value=mock_quotes):
-        with patch("service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock) as mock_exec_a:
-            with patch("service.providers.provider_b.ProviderB.execute", new_callable=AsyncMock) as mock_exec_b:
-                mock_exec_a.return_value = {"status": ExecutionStatus.TIMEOUT, "provider_ref": "ref1"}
-                mock_exec_b.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref2"}
+    with (
+        patch.object(LiquidityService, "_fetch_quotes_from_providers", return_value=mock_quotes),
+        patch(
+            "liquidity_orchestrator.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
+        ) as mock_exec_a,
+        patch(
+            "liquidity_orchestrator.service.providers.provider_b.ProviderB.execute", new_callable=AsyncMock
+        ) as mock_exec_b,
+    ):
+        mock_exec_a.return_value = {"status": ExecutionStatus.TIMEOUT, "provider_ref": "ref1"}
+        mock_exec_b.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref2"}
 
-                # Mock time to control latency measurement
-                with patch("time.time") as mock_time, patch("time.perf_counter") as mock_perf:
-                    t = 2000.0
-                    p = 100.0
-                    # Mock values for time.time() (used for record timestamps and cleanup):
-                    # fmt: off
-                    mock_time.side_effect = [
-                        t + 0.2, t + 0.2,  # ProviderA
-                        t + 0.6, t + 0.6,  # ProviderB
-                    ] + [t + 0.7] * 50
+        # Mock time to control latency measurement
+        with patch("time.time") as mock_time, patch("time.perf_counter") as mock_perf:
+            t = 2000.0
+            p = 100.0
+            # Mock values for time.time() (used for record timestamps and cleanup):
+            # fmt: off
+            mock_time.side_effect = [
+                t + 0.2, t + 0.2,  # ProviderA
+                t + 0.6, t + 0.6,  # ProviderB
+            ] + [t + 0.7] * 50
 
-                    # Mock values for time.perf_counter() (used for latency calculation):
-                    mock_perf.side_effect = [
-                        p + 0.1, p + 0.2,  # ProviderA
-                        p + 0.3, p + 0.6,  # ProviderB
-                    ]
-                    # fmt: on
+            # Mock values for time.perf_counter() (used for latency calculation):
+            mock_perf.side_effect = [
+                p + 0.1, p + 0.2,  # ProviderA
+                p + 0.3, p + 0.6,  # ProviderB
+            ]
+            # fmt: on
 
-                    created = await service.create_order(order_in)
-                    await service.execute_order(int(created.id))
+            created = await service.create_order(order_in)
+            await service.execute_order(int(created.id))
 
-                    # We access properties. Each access consumes one value from side_effect if it's called.
-                    avg_lat = service.average_latency
-                    t_perc = service.timeout_percentage
+            # We access properties. Each access consumes one value from side_effect if it's called.
+            avg_lat = service.average_latency
+            t_perc = service.timeout_percentage
 
-                    assert avg_lat["ProviderA"] == 0.0
-                    assert avg_lat["ProviderB"] == pytest.approx(0.3)
-                    assert t_perc["ProviderA"] == 100.0
-                    assert t_perc["ProviderB"] == 0.0
+            assert avg_lat["ProviderA"] == 0.0
+            assert avg_lat["ProviderB"] == pytest.approx(0.3)
+            assert t_perc["ProviderA"] == 100.0
+            assert t_perc["ProviderB"] == 0.0

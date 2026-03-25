@@ -427,7 +427,7 @@ wheels = [
 [[package]]
 name = "liquidity-orchestrator"
 version = "0.1.0"
-source = { virtual = "apps/liquidity_orchestrator" }
+source = { editable = "apps/liquidity_orchestrator" }
 dependencies = [
     { name = "alembic" },
     { name = "asyncpg" },
@@ -537,7 +537,7 @@ wheels = [
 [[package]]
 name = "mock-providers"
 version = "0.1.0"
-source = { virtual = "apps/mock_providers" }
+source = { editable = "apps/mock_providers" }
 dependencies = [
     { name = "cachetools" },
     { name = "lib", extra = ["fastapi"] },

@@ -1,8 +1,8 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from entrypoints.fastapi.api.deps import IDEMPOTENCY_SET
-from entrypoints.fastapi.main import main_app
+from liquidity_orchestrator.entrypoints.fastapi.api.deps import IDEMPOTENCY_SET
+from liquidity_orchestrator.entrypoints.fastapi.main import main_app
 from starlette.testclient import TestClient
 
 

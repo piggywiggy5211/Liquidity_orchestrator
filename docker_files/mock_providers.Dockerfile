@@ -7,8 +7,14 @@ ENV UV_COMPILE_BYTECODE=1 \
 
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
+COPY lib/pyproject.toml ./lib/
 COPY apps/mock_providers/pyproject.toml ./apps/mock_providers/
 # Install ONLY the mock_providers dependencies
+RUN uv sync --frozen --no-dev --package mock-providers
+
+# Copy source code and rebuild with sources available
+COPY lib/src ./lib/src
+COPY apps/mock_providers/src ./apps/mock_providers/src
 RUN uv sync --frozen --no-dev --package mock-providers
 
 # Stage 2: Final clean runtime image
@@ -20,9 +26,4 @@ WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Copy the required application source code
-# `app` is needed because mock_providers imports `app.domain.enums`
-COPY apps/liquidity_orchestrator/app ./app
-COPY apps/mock_providers ./mock_providers
-
-CMD ["python", "-m", "mock_providers.main"]
+CMD ["python", "-m", "mock_providers.entrypoints.fastapi.main"]

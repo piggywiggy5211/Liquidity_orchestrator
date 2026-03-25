@@ -3,10 +3,10 @@ from decimal import Decimal
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from database.uow import UnitOfWorkSqlAlchemy
-from domain.enums import QuoteDirection
-from service.dto import OrderCreateDTO
-from service.liquidity_service import LiquidityService
+from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
+from liquidity_orchestrator.domain.enums import QuoteDirection
+from liquidity_orchestrator.service.dto import OrderCreateDTO
+from liquidity_orchestrator.service.liquidity_service import LiquidityService
 
 
 @pytest.mark.asyncio
@@ -36,7 +36,7 @@ async def test_execute_order_parallel_conflict(session_factory):
         uow3 = UnitOfWorkSqlAlchemy(session_factory, sess3)
 
         with patch(
-            "service.liquidity_service.LiquidityService._fetch_quotes_from_providers",
+            "liquidity_orchestrator.service.liquidity_service.LiquidityService._fetch_quotes_from_providers",
             new_callable=AsyncMock,
             return_value=[],
         ):

@@ -126,7 +126,7 @@ uv run alembic upgrade head
 ```bash
 task run:orchestrator
 # OR manually:
-uv run --package liquidity-orchestrator python -m entrypoints.fastapi.main
+cd apps/liquidity_orchestrator && uv run python -m liquidity_orchestrator.entrypoints.fastapi.main
 ```
 
 ## API Documentation

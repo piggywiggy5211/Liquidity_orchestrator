@@ -2,12 +2,12 @@ from decimal import Decimal
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from database.uow import UnitOfWorkSqlAlchemy
-from domain.enums import OrderStatus, QuoteDirection
-from domain.models import Order, Outbox
-from service.dto import OrderCreateDTO, QuoteDTO
-from service.liquidity_service import LiquidityService
-from service.providers import ExecutionStatus
+from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
+from liquidity_orchestrator.domain.enums import OrderStatus, QuoteDirection
+from liquidity_orchestrator.domain.models import Order, Outbox
+from liquidity_orchestrator.service.dto import OrderCreateDTO, QuoteDTO
+from liquidity_orchestrator.service.liquidity_service import LiquidityService
+from liquidity_orchestrator.service.providers import ExecutionStatus
 from sqlalchemy import select
 
 
@@ -40,9 +40,11 @@ async def test_outbox_atomicity_rollback(db_session, session_factory):
 
     # Mock provider execution as successful
     with (
-        patch("service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock) as mock_execute,
-        patch("service.providers.provider_b.ProviderB.execute", new=mock_execute),
-        patch("service.providers.provider_c.ProviderC.execute", new=mock_execute),
+        patch(
+            "liquidity_orchestrator.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
+        ) as mock_execute,
+        patch("liquidity_orchestrator.service.providers.provider_b.ProviderB.execute", new=mock_execute),
+        patch("liquidity_orchestrator.service.providers.provider_c.ProviderC.execute", new=mock_execute),
     ):
         mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "test-ref-123"}
 
@@ -105,9 +107,11 @@ async def test_outbox_atomicity_success(db_session, session_factory):
     service._fetch_quotes_from_providers = AsyncMock(return_value=[quote])
 
     with (
-        patch("service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock) as mock_execute,
-        patch("service.providers.provider_b.ProviderB.execute", new=mock_execute),
-        patch("service.providers.provider_c.ProviderC.execute", new=mock_execute),
+        patch(
+            "liquidity_orchestrator.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
+        ) as mock_execute,
+        patch("liquidity_orchestrator.service.providers.provider_b.ProviderB.execute", new=mock_execute),
+        patch("liquidity_orchestrator.service.providers.provider_c.ProviderC.execute", new=mock_execute),
     ):
         mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "success-ref"}
 

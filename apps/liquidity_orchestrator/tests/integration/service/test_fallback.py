@@ -2,12 +2,12 @@ from decimal import Decimal
 from unittest.mock import AsyncMock, PropertyMock, patch
 
 import pytest
-from database.uow import UnitOfWorkSqlAlchemy
-from domain.enums import OrderStatus, QuoteDirection
-from domain.models import Order
-from service.dto import OrderCreateDTO, QuoteDTO
-from service.liquidity_service import LiquidityService
-from service.providers import ExecutionStatus
+from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
+from liquidity_orchestrator.domain.enums import OrderStatus, QuoteDirection
+from liquidity_orchestrator.domain.models import Order
+from liquidity_orchestrator.service.dto import OrderCreateDTO, QuoteDTO
+from liquidity_orchestrator.service.liquidity_service import LiquidityService
+from liquidity_orchestrator.service.providers import ExecutionStatus
 
 
 @pytest.mark.asyncio
@@ -68,9 +68,11 @@ async def test_fallback_best_fails_next_succeeds(db_session, session_factory):
         mock_tout.return_value = mock_timeouts
 
         with (
-            patch("service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock) as mock_execute,
-            patch("service.providers.provider_b.ProviderB.execute", new=mock_execute),
-            patch("service.providers.provider_c.ProviderC.execute", new=mock_execute),
+            patch(
+                "liquidity_orchestrator.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
+            ) as mock_execute,
+            patch("liquidity_orchestrator.service.providers.provider_b.ProviderB.execute", new=mock_execute),
+            patch("liquidity_orchestrator.service.providers.provider_c.ProviderC.execute", new=mock_execute),
         ):
             mock_execute.side_effect = [
                 {"status": ExecutionStatus.TIMEOUT, "provider_ref": "ref-fail-a"},

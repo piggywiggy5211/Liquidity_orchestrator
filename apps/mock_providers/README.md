@@ -8,10 +8,11 @@ This is a standalone mock service simulating external liquidity providers (Provi
 - **Error Simulation**: Randomly declines some order executions.
 
 ## Running the Service
-You can run the service locally using `uv`:
+You can run the service locally from the workspace root using `task`:
 ```bash
-# Running from the workspace root
-uv run --package mock-providers python -m mock_providers.main
+task run:mock
+# OR manually:
+cd apps/mock_providers && uv run python -m mock_providers.entrypoints.fastapi.main
 ```
 The service will start on port `8001`.
 
