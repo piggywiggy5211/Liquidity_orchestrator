@@ -1,6 +1,8 @@
 import uvicorn
 from fastapi import FastAPI
 from lib.logger.logger import setup_logger
+from lib.middleware.logger_context import LoggerContextMiddleware
+from lib.middleware.logging_request_response import RequestResponseLoggingMiddleware
 from lib.tracer import init_base_tracer, instrument_fastapi
 from mock_providers.core.config import settings
 from mock_providers.entrypoints.fastapi.router import router
@@ -11,6 +13,10 @@ setup_logger(
     debug=settings.logging.debug,
 )
 app = FastAPI(title="Mock Providers API")
+# middlewares
+app.add_middleware(RequestResponseLoggingMiddleware)
+app.add_middleware(LoggerContextMiddleware)
+
 init_base_tracer()
 instrument_fastapi(app)
 
