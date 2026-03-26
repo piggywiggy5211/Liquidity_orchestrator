@@ -3,51 +3,69 @@ version: '3'
 tasks:
   check:
     desc: Run all checks (tests, linter, type hints)
-    deps: [ test:lib, test:orchestrator, test:mock, ruff, mypy ]
-    aliases: [ x ]
-    
-  mypy:
+    deps: [ test:all, ruff:all, mypy:all ]
+    aliases: [ c ]
+
+  mypy:all:
+    cmds:
+      - task: mypy:apps
+      - task: mypy:lib
+  ruff:all:
+    cmds:
+      - task: ruff:apps
+      - task: ruff:lib
+
+  mypy:apps:
     desc: Run type checking for all apps
     cmds:
       - uv run mypy apps/
-      
-  ruff:
-    desc: Run linters and formatters
+  mypy:lib:
+    desc: Run type checking for lib
+    cmds:
+      - uv run mypy lib/
+
+  ruff:apps:
+    desc: Run linters and formatters for apps
     cmds:
       - uv run ruff check apps/ --fix
       - uv run ruff format apps/
-      
+  ruff:lib:
+    desc: Run linters and formatters lib
+    cmds:
+      - uv run ruff check lib/ --fix
+      - uv run ruff format lib/
+
   test:lib:
     desc: Run tests ONLY for the shared library
     dir: lib
     cmds:
       - uv run pytest -vv
-      
+
   test:orchestrator:
     desc: Run tests ONLY for the main application
     dir: apps/liquidity_orchestrator
     cmds:
       - uv run pytest -vv
-      
+
   test:mock:
     desc: Run tests ONLY for mock providers
     dir: apps/mock_providers
     cmds:
       - uv run pytest -vv
-      
+
   test:all:
     desc: Run all tests in the monorepo
     cmds:
       - task: test:lib
       - task: test:orchestrator
       - task: test:mock
-      
+
   run:orchestrator:
     desc: Run main application (Liquidity Orchestrator)
     dir: apps/liquidity_orchestrator
     cmds:
       - uv run python -m liquidity_orchestrator.entrypoints.fastapi.main
-      
+
   run:mock:
     desc: Run mock providers application
     dir: apps/mock_providers

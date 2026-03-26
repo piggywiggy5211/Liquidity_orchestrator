@@ -2,9 +2,10 @@ import json
 import sys
 from typing import TYPE_CHECKING
 
-from lib.sanitizers.log_sanitizer import log_sanitizer
 from loguru import logger
 from loguru._better_exceptions import ExceptionFormatter
+
+from lib.sanitizers.log_sanitizer import log_sanitizer
 
 
 if TYPE_CHECKING:

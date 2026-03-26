@@ -1,6 +1,7 @@
 import httpx
-from lib.sanitizers.http_saitazer import sanitize_headers
 from loguru import logger
+
+from lib.sanitizers.http_saitazer import sanitize_headers
 
 
 async def log_request(request: httpx.Request):

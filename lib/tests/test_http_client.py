@@ -4,7 +4,7 @@ from lib.http_client import LoggingAsyncClient
 
 
 @pytest.mark.asyncio
-async def test_httpx_logging_transport(capsys):
+async def test_httpx_logging_transport(capsys, configure_logging):
     class DummyTransport(httpx.AsyncBaseTransport):
         async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
             return httpx.Response(
@@ -32,7 +32,7 @@ async def test_httpx_logging_transport(capsys):
 
 
 @pytest.mark.asyncio
-async def test_httpx_error_logging(capsys):
+async def test_httpx_error_logging(capsys, configure_logging):
     class ErrorTransport(httpx.AsyncBaseTransport):
         async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
             raise httpx.ConnectError("Connection refused")
