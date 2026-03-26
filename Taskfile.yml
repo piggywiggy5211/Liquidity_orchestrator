@@ -7,13 +7,9 @@ tasks:
     aliases: [ c ]
 
   mypy:all:
-    cmds:
-      - task: mypy:apps
-      - task: mypy:lib
+    deps: [ mypy:apps, mypy:lib ]
   ruff:all:
-    cmds:
-      - task: ruff:apps
-      - task: ruff:lib
+    deps: [ ruff:apps, ruff:lib ]
 
   mypy:apps:
     desc: Run type checking for all apps
@@ -55,10 +51,7 @@ tasks:
 
   test:all:
     desc: Run all tests in the monorepo
-    cmds:
-      - task: test:lib
-      - task: test:orchestrator
-      - task: test:mock
+    deps: [ test:lib, test:orchestrator, test:mock ]
 
   run:orchestrator:
     desc: Run main application (Liquidity Orchestrator)
