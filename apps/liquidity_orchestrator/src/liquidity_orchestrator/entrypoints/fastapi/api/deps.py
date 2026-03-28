@@ -3,13 +3,9 @@ from decimal import Decimal
 from typing import Annotated
 from urllib.parse import urlparse
 
-from fastapi import Depends, Header, HTTPException, Request
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Header, HTTPException, Request
 
 from liquidity_orchestrator.core.config import settings
-from liquidity_orchestrator.database.db_helper import db_helper
-from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
-from liquidity_orchestrator.service.liquidity_service import LiquidityService
 
 
 IDEMPOTENCY_SET = set()
@@ -33,16 +29,6 @@ async def passes_idempotency_check(
         return False
     IDEMPOTENCY_SET.add(h)
     return True
-
-
-async def get_uow(session: AsyncSession = Depends(db_helper.session_getter)) -> UnitOfWorkSqlAlchemy:
-    return UnitOfWorkSqlAlchemy(db_helper.session_factory, session)
-
-
-async def get_liquidity_service(
-    uow: Annotated[UnitOfWorkSqlAlchemy, Depends(get_uow)],
-) -> LiquidityService:
-    return LiquidityService(uow)
 
 
 def validate_amount(amount: Decimal):

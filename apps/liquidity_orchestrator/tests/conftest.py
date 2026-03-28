@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from liquidity_orchestrator.entrypoints.fastapi.api.deps import IDEMPOTENCY_SET
-from liquidity_orchestrator.entrypoints.fastapi.main import main_app
+from liquidity_orchestrator.entrypoints.fastapi.main import create_app
 from starlette.testclient import TestClient
 
 
@@ -22,6 +22,7 @@ def mock_asyncio_sleep():
 
 
 @pytest.fixture(scope="session")
-def client():
-    with TestClient(main_app) as c:
+def client(dishka_container):
+    app = create_app(container=dishka_container)
+    with TestClient(app) as c:
         yield c

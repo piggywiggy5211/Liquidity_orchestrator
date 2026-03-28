@@ -8,6 +8,7 @@ authors = [
     { name = "waddles0618", email = "waddles0618@gmail.com" }
 ]
 dependencies = [
+    "dishka>=1.2.0,<2.0.0",
     "cachetools>=7.0.1,<8.0.0",
     "alembic>=1.18.4,<2.0.0",
     "sqlalchemy>=2.0.46,<3.0.0",

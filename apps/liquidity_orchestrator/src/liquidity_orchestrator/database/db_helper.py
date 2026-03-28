@@ -1,5 +1,4 @@
-import typing
-from typing import Any, AsyncGenerator, Type
+from typing import Any, AsyncGenerator
 
 from loguru import logger
 from sqlalchemy.ext.asyncio import (
@@ -10,12 +9,6 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.pool import NullPool
 
-from liquidity_orchestrator.core.config import settings
-
-
-if typing.TYPE_CHECKING:
-    from sqlalchemy.pool.base import Pool
-
 
 class DatabaseHelper:
     def __init__(
@@ -25,12 +18,12 @@ class DatabaseHelper:
         echo_pool: bool = False,
         pool_size: int = 5,
         max_overflow: int = 10,
-        poolclass: Type["Pool"] | None = None,
+        is_null_pool: bool = False,
     ) -> None:
 
         pool_settings: dict[str, Any] = {}
-        if poolclass is NullPool:
-            pool_settings["poolclass"] = poolclass
+        if is_null_pool:
+            pool_settings["poolclass"] = NullPool
         else:
             pool_settings["pool_size"] = pool_size
             pool_settings["max_overflow"] = max_overflow
@@ -55,12 +48,3 @@ class DatabaseHelper:
     async def session_getter(self) -> AsyncGenerator[AsyncSession]:
         async with self.session_factory() as session:
             yield session
-
-
-db_helper = DatabaseHelper(
-    url=str(settings.db.url),
-    echo=settings.db.echo,
-    echo_pool=settings.db.echo_pool,
-    pool_size=settings.db.pool_size,
-    max_overflow=settings.db.max_overflow,
-)

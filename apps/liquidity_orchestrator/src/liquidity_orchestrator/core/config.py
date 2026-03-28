@@ -10,6 +10,7 @@ class DatabaseConfig(BaseModel):
     echo_pool: bool = False
     pool_size: int = 50
     max_overflow: int = 10
+    is_null_pool: bool = False
 
 
 class Settings(FastAPISettings):

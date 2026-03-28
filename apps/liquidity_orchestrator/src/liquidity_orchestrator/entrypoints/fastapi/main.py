@@ -1,5 +1,7 @@
 from contextlib import asynccontextmanager
 
+from dishka import AsyncContainer
+from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
 from lib.http_client import create_http_client
 from lib.logger.logger import setup_logger
@@ -7,17 +9,10 @@ from lib.middleware.logger_context import LoggerContextMiddleware
 from lib.middleware.logging_request_response import RequestResponseLoggingMiddleware
 from lib.tracer import init_base_tracer, instrument_db, instrument_fastapi
 
+from liquidity_orchestrator.core.bootstrap_di.container import bootstrap_container
 from liquidity_orchestrator.core.config import settings
-from liquidity_orchestrator.database.db_helper import db_helper
 from liquidity_orchestrator.database.models import map_models_sqlalchemy
 from liquidity_orchestrator.entrypoints.fastapi.router import api_router
-
-
-setup_logger(
-    log_level=settings.logging.log_level_value,
-    debug=settings.logging.debug,
-)
-map_models_sqlalchemy()
 
 
 @asynccontextmanager
@@ -27,10 +22,18 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         await app.state.http_client.aclose()
-        await db_helper.dispose()
+        if hasattr(app.state, "dishka_container"):
+            await app.state.dishka_container.close()
 
 
-def create_app() -> FastAPI:
+def create_app(container: AsyncContainer | None = None) -> FastAPI:
+
+    setup_logger(
+        log_level=settings.logging.log_level_value,
+        debug=settings.logging.debug,
+    )
+    map_models_sqlalchemy()
+
     app = FastAPI(
         title="Liquidity Orchestrator",
         description="API Liquidity Orchestrator (Onramp/Offramp)",
@@ -44,16 +47,21 @@ def create_app() -> FastAPI:
     init_base_tracer()
     instrument_fastapi(app)
     instrument_db()
+
+    # DI Setup
+    if container is None:
+        container = bootstrap_container(settings)
+    setup_dishka(container, app)
+
     # routers
     app.include_router(api_router)
     return app
 
 
-main_app = create_app()
-
 if __name__ == "__main__":
     import uvicorn
 
+    main_app = create_app()
     uvicorn.run(
         main_app,
         host=settings.run.host,

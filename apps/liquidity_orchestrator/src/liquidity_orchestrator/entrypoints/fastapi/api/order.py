@@ -1,7 +1,7 @@
+from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
 from liquidity_orchestrator.entrypoints.fastapi.api.deps import (
-    get_liquidity_service,
     passes_idempotency_check,
     validate_amount,
 )
@@ -14,11 +14,12 @@ router = APIRouter(tags=["Orders"])
 
 
 @router.post("", response_model=OrderResponse)
+@inject
 async def create_order(
     data: OrderCreateRequest,
     background_tasks: BackgroundTasks,
+    service: FromDishka[LiquidityService],
     idempotency_passed: bool = Depends(passes_idempotency_check),
-    service: LiquidityService = Depends(get_liquidity_service),
 ):
     if not idempotency_passed:
         raise HTTPException(
@@ -41,9 +42,10 @@ async def create_order(
 
 
 @router.get("/{order_id}", response_model=OrderResponse)
+@inject
 async def get_order(
     order_id: int,
-    service: LiquidityService = Depends(get_liquidity_service),
+    service: FromDishka[LiquidityService],
 ):
     """
     Retrieves information about a specific order by its unique ID.
