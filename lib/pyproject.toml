@@ -3,8 +3,9 @@ name = "lib"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
+license = {text = "GPL-3.0-or-later"}
 authors = [
-    { name = "piggywiggy5211", email = "waddles0618@gmail.com" }
+    { name = "waddles0618", email = "waddles0618@gmail.com" }
 ]
 requires-python = ">=3.14"
 dependencies = [

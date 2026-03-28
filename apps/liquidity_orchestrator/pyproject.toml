@@ -3,6 +3,10 @@ name = "liquidity-orchestrator"
 version = "0.1.0"
 description = "Example of liquidity Orchestrator for Onramp/Offramp"
 requires-python = ">=3.14"
+license = {text = "GPL-3.0-or-later"}
+authors = [
+    { name = "waddles0618", email = "waddles0618@gmail.com" }
+]
 dependencies = [
     "cachetools>=7.0.1,<8.0.0",
     "alembic>=1.18.4,<2.0.0",

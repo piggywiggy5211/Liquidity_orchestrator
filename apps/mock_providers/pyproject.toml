@@ -2,6 +2,10 @@
 name = "mock-providers"
 version = "0.1.0"
 requires-python = ">=3.14"
+license = {text = "GPL-3.0-or-later"}
+authors = [
+    { name = "waddles0618", email = "waddles0618@gmail.com" }
+]
 dependencies = [
     "cachetools>=7.0.1,<8.0.0",
     "lib[fastapi]",

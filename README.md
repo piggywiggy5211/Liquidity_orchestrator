@@ -142,3 +142,7 @@ task check
 ```
 
 *(You can also run specific tasks: `task test:all`, `task ruff`, `task mypy`)*
+
+## License
+
+This project is licensed under the [GNU GPLv3](LICENSE) license.
