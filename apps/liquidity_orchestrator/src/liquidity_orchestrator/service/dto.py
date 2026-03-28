@@ -11,21 +11,6 @@ class BaseDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True, frozen=True)
 
 
-class QuoteRequestDTO(BaseDTO):
-    direction: QuoteDirection
-    pair: str  # asset pair in format 'USDT-USD'
-    amount: Decimal
-
-
-class QuoteResultDTO(BaseDTO):
-    incoming_amount: Decimal | None = None
-    incoming_asset_code: str | None = None
-    outgoing_amount: Decimal | None = None
-    outgoing_asset_code: str | None = None
-    fee_amount: Decimal | None = None
-    fee_asset_code: str | None = None
-
-
 class OrderCreateDTO(BaseDTO):
     direction: QuoteDirection
     pair: str

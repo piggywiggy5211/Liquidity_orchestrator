@@ -5,7 +5,7 @@ import pytest
 from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
 from liquidity_orchestrator.domain.enums import OrderStatus, QuoteDirection
 from liquidity_orchestrator.domain.models import Order
-from liquidity_orchestrator.service.dto import OrderCreateDTO, QuoteDTO, QuoteRequestDTO
+from liquidity_orchestrator.service.dto import OrderCreateDTO, QuoteDTO
 from liquidity_orchestrator.service.liquidity_service import LiquidityService
 from liquidity_orchestrator.service.providers import ExecutionStatus
 
@@ -54,11 +54,6 @@ async def test_liquidity_service_basic_flow(db_session, session_factory, mock_as
         assert order.status == OrderStatus.COMPLETED
         assert order.incoming_amount == Decimal("100.0")
         assert order.outgoing_amount == Decimal("98.0")
-
-    quote_dto = QuoteRequestDTO(direction=QuoteDirection.ON_RAMP, pair="EUR-EURS", amount=Decimal("100.0"))
-    res_q = await service.get_quote(quote_dto)
-    assert res_q.incoming_amount == Decimal("100.0")
-    assert res_q.outgoing_amount == Decimal("98")
 
 
 @pytest.mark.asyncio

@@ -13,8 +13,6 @@ from liquidity_orchestrator.domain.routing import build_execution_plan
 from liquidity_orchestrator.service.dto import (
     OrderCreateDTO,
     OrderDTO,
-    QuoteRequestDTO,
-    QuoteResultDTO,
 )
 from liquidity_orchestrator.service.mixins import ProviderStatsMixin
 from liquidity_orchestrator.service.providers import (
@@ -29,7 +27,7 @@ from liquidity_orchestrator.service.providers import (
 class LiquidityService(ProviderStatsMixin):
     def __init__(self, uow: IUnitOfWork, http_client: httpx.AsyncClient):
         self.uow = uow
-        self.http_client = http_client
+        self.http_client = http_client  # TODO проверить зачем тут
 
     async def create_order(self, data: OrderCreateDTO) -> OrderDTO:
         order = Order.create(
@@ -97,20 +95,6 @@ class LiquidityService(ProviderStatsMixin):
 
         logger.warning(f"Order {order_id} failed after trying all providers")
         await self._set_order_failure(order_id)
-
-    async def get_quote(self, data: QuoteRequestDTO) -> QuoteResultDTO:
-        incoming_asset, outgoing_asset, *_ = data.pair.split("-")
-        fee_amount = data.amount * settings.service_fee
-        outgoing_amount = data.amount - fee_amount
-
-        return QuoteResultDTO(
-            incoming_amount=data.amount,
-            incoming_asset_code=incoming_asset,
-            outgoing_amount=outgoing_amount,
-            outgoing_asset_code=outgoing_asset,
-            fee_amount=fee_amount,
-            fee_asset_code=incoming_asset,
-        )
 
     async def _fetch_quotes_from_providers(self, order: OrderDTO) -> list[Quote]:
         logger.info(f"Fetching quotes for order {order.id}")
