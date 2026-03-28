@@ -18,7 +18,7 @@ async def test_execute_order_parallel_conflict(session_factory):
     # 1. Create an order
     async with session_factory() as sess:
         uow = UnitOfWorkSqlAlchemy(session_factory, sess)
-        service = LiquidityService(uow, AsyncMock())
+        service = LiquidityService(uow)
         order_in = OrderCreateDTO(
             direction=QuoteDirection.ON_RAMP,
             pair="EUR-USD",
@@ -40,9 +40,9 @@ async def test_execute_order_parallel_conflict(session_factory):
             new_callable=AsyncMock,
             return_value=[],
         ):
-            service1 = LiquidityService(uow1, AsyncMock())
-            service2 = LiquidityService(uow2, AsyncMock())
-            service3 = LiquidityService(uow3, AsyncMock())
+            service1 = LiquidityService(uow1)
+            service2 = LiquidityService(uow2)
+            service3 = LiquidityService(uow3)
 
             results = await asyncio.gather(
                 service1.execute_order(order_id),

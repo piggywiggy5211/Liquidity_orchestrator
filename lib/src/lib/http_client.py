@@ -4,7 +4,7 @@ from loguru import logger
 from lib.sanitizers.http_saitazer import sanitize_headers
 
 
-async def log_request(request: httpx.Request):
+async def _log_request(request: httpx.Request):
     url = str(request.url)
     headers = sanitize_headers(request.headers)
     query_params = dict(request.url.params)
@@ -24,7 +24,7 @@ async def log_request(request: httpx.Request):
     ).info(log_message)
 
 
-async def log_response(response: httpx.Response):
+async def _log_response(response: httpx.Response):
     request = response.request
     url = str(request.url)
     status_code = response.status_code
@@ -54,8 +54,8 @@ class LoggingAsyncClient(httpx.AsyncClient):
         if "request" not in event_hooks:
             event_hooks["request"] = list()
 
-        event_hooks["response"].append(log_response)
-        event_hooks["request"].append(log_request)
+        event_hooks["response"].append(_log_response)
+        event_hooks["request"].append(_log_request)
 
         super().__init__(*args, event_hooks=event_hooks, **kwargs)
 

@@ -13,8 +13,7 @@ from liquidity_orchestrator.service.providers import ExecutionStatus
 @pytest.mark.asyncio
 async def test_liquidity_service_basic_flow(db_session, session_factory, mock_asyncio_sleep):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    mock_http = AsyncMock()
-    service = LiquidityService(uow, mock_http)
+    service = LiquidityService(uow)
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,
@@ -59,7 +58,7 @@ async def test_liquidity_service_basic_flow(db_session, session_factory, mock_as
 @pytest.mark.asyncio
 async def test_order_execution_full_cycle_success(db_session, session_factory, mock_asyncio_sleep):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, AsyncMock())
+    service = LiquidityService(uow)
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,
@@ -102,7 +101,7 @@ async def test_order_execution_full_cycle_success(db_session, session_factory, m
 @pytest.mark.asyncio
 async def test_order_execution_retry_logic(db_session, session_factory, mock_asyncio_sleep):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, AsyncMock())
+    service = LiquidityService(uow)
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,
@@ -156,7 +155,7 @@ async def test_order_execution_retry_logic(db_session, session_factory, mock_asy
 @pytest.mark.asyncio
 async def test_order_execution_all_fail(db_session, session_factory, mock_asyncio_sleep):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, AsyncMock())
+    service = LiquidityService(uow)
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,

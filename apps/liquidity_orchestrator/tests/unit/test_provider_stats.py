@@ -18,7 +18,7 @@ def clear_stats():
 @pytest.mark.asyncio
 async def test_provider_stats_mixin_logic(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, AsyncMock())
+    service = LiquidityService(uow)
 
     # Test recording stats directly first to verify mixin logic
     service._record_execution("ProviderA", 0.1, ExecutionStatus.SUCCESS)
@@ -35,7 +35,7 @@ async def test_provider_stats_mixin_logic(db_session, session_factory):
 @pytest.mark.asyncio
 async def test_provider_stats_moving_window(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, AsyncMock())
+    service = LiquidityService(uow)
 
     with patch("time.time") as mock_time:
         start_t = 1000.0
@@ -56,7 +56,7 @@ async def test_provider_stats_moving_window(db_session, session_factory):
 @pytest.mark.asyncio
 async def test_provider_stats_integration_in_execute_order(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, AsyncMock())
+    service = LiquidityService(uow)
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,

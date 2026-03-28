@@ -1,7 +1,6 @@
 import asyncio
 import time
 
-import httpx
 from loguru import logger
 
 from liquidity_orchestrator.core.config import settings
@@ -25,9 +24,8 @@ from liquidity_orchestrator.service.providers import (
 
 
 class LiquidityService(ProviderStatsMixin):
-    def __init__(self, uow: IUnitOfWork, http_client: httpx.AsyncClient):
+    def __init__(self, uow: IUnitOfWork):
         self.uow = uow
-        self.http_client = http_client  # TODO проверить зачем тут
 
     async def create_order(self, data: OrderCreateDTO) -> OrderDTO:
         order = Order.create(

@@ -14,7 +14,7 @@ from sqlalchemy import select
 @pytest.mark.asyncio
 async def test_outbox_atomicity_rollback(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, AsyncMock())
+    service = LiquidityService(uow)
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,
@@ -83,7 +83,7 @@ async def test_outbox_atomicity_success(db_session, session_factory):
     Additional test: verify that both changes are saved on regular success.
     """
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, AsyncMock())
+    service = LiquidityService(uow)
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,
