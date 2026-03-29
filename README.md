@@ -31,7 +31,7 @@ The service automatically discovers and registers liquidity providers using a co
 
 1. **Dynamic Discovery**: The `discover_providers` function (in `app/service/providers/__init__.py`) uses `pkgutil.iter_modules` to scan the package for modules starting with `provider_` and imports them dynamically.
 2. **Subclass Registry**: Once modules are imported, `BaseProvider.__subclasses__()` is used to automatically collect all available provider classes. This allows adding new providers simply by creating a new file in the directory, without modifying the core service logic.
-3. **Lazy Loading**: The `PROVIDERS_LIST` and `PROVIDERS_MAP` are exposed via module-level `__getattr__` (PEP 562), ensuring discovery only happens when these attributes are first accessed.
+3. **Lazy Loading**: The `PROVIDERS_MAP` are exposed via module-level `__getattr__` (PEP 562), ensuring discovery only happens when these attributes are first accessed.
 
 ### Sliding Window Analytics
 To ensure provider scoring is based on recent performance data, the system implements a **Sliding Window** pattern via `ProviderStatsMixin`.

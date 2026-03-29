@@ -3,15 +3,15 @@ import pkgutil
 from functools import cache
 from typing import TYPE_CHECKING, Sequence
 
-from .base import BaseProvider, ExecutionStatus, IProvider, OrderExecutionRequest
+from liquidity_orchestrator.integrations.dto import ExecutionStatus, OrderExecutionRequest
+from liquidity_orchestrator.integrations.interfaces import IProvider
 
 
 if TYPE_CHECKING:
-    PROVIDERS_LIST: Sequence[type[IProvider]]
     PROVIDERS_MAP: dict[str, type[IProvider]]
 
 
-def discover_providers():
+def _discover_providers():
     """Dynamically imports all modules in the current package to register providers."""
     for _, module_name, _ in pkgutil.iter_modules(__path__):
         if module_name.startswith("provider_"):
@@ -20,9 +20,9 @@ def discover_providers():
 
 @cache
 def _get_providers() -> Sequence[type[IProvider]]:
-    """Returns all subclasses of BaseProvider."""
-    discover_providers()
-    return BaseProvider.__subclasses__()
+    """Returns all subclasses of IProvider."""
+    _discover_providers()
+    return IProvider.__subclasses__()
 
 
 @cache
@@ -33,8 +33,6 @@ def _get_providers_map() -> dict[str, type[IProvider]]:
 
 def __getattr__(name):
     match name:
-        case "PROVIDERS_LIST":
-            return _get_providers()
         case "PROVIDERS_MAP":
             return _get_providers_map()
         case _:
@@ -48,6 +46,5 @@ __all__ = (
     "IProvider",
     "ExecutionStatus",
     "OrderExecutionRequest",
-    "PROVIDERS_LIST",
     "PROVIDERS_MAP",
 )

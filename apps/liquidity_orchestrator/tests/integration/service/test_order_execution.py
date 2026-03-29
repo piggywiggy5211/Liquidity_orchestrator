@@ -5,15 +5,16 @@ import pytest
 from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
 from liquidity_orchestrator.domain.enums import OrderStatus, QuoteDirection
 from liquidity_orchestrator.domain.models import Order
+from liquidity_orchestrator.integrations.dto import ExecutionStatus, ProviderExecutionResponse
+from liquidity_orchestrator.integrations.providers import PROVIDERS_MAP
 from liquidity_orchestrator.service.dto import OrderCreateDTO, QuoteDTO
 from liquidity_orchestrator.service.liquidity_service import LiquidityService
-from liquidity_orchestrator.service.providers import ExecutionStatus
 
 
 @pytest.mark.asyncio
 async def test_liquidity_service_basic_flow(db_session, session_factory, mock_asyncio_sleep):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow)
+    service = LiquidityService(uow, PROVIDERS_MAP)
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,
@@ -25,12 +26,12 @@ async def test_liquidity_service_basic_flow(db_session, session_factory, mock_as
 
     with (
         patch(
-            "liquidity_orchestrator.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
+            "liquidity_orchestrator.integrations.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
         ) as mock_execute,
-        patch("liquidity_orchestrator.service.providers.provider_b.ProviderB.execute", new=mock_execute),
-        patch("liquidity_orchestrator.service.providers.provider_c.ProviderC.execute", new=mock_execute),
+        patch("liquidity_orchestrator.integrations.providers.provider_b.ProviderB.execute", new=mock_execute),
+        patch("liquidity_orchestrator.integrations.providers.provider_c.ProviderC.execute", new=mock_execute),
     ):
-        mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref-123"}
+        mock_execute.return_value = ProviderExecutionResponse(status=ExecutionStatus.SUCCESS, provider_ref="ref-123")
 
         quote = QuoteDTO(
             id=1,
@@ -58,7 +59,7 @@ async def test_liquidity_service_basic_flow(db_session, session_factory, mock_as
 @pytest.mark.asyncio
 async def test_order_execution_full_cycle_success(db_session, session_factory, mock_asyncio_sleep):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow)
+    service = LiquidityService(uow, PROVIDERS_MAP)
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,
@@ -70,12 +71,14 @@ async def test_order_execution_full_cycle_success(db_session, session_factory, m
 
     with (
         patch(
-            "liquidity_orchestrator.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
+            "liquidity_orchestrator.integrations.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
         ) as mock_execute,
-        patch("liquidity_orchestrator.service.providers.provider_b.ProviderB.execute", new=mock_execute),
-        patch("liquidity_orchestrator.service.providers.provider_c.ProviderC.execute", new=mock_execute),
+        patch("liquidity_orchestrator.integrations.providers.provider_b.ProviderB.execute", new=mock_execute),
+        patch("liquidity_orchestrator.integrations.providers.provider_c.ProviderC.execute", new=mock_execute),
     ):
-        mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "test-ref-123"}
+        mock_execute.return_value = ProviderExecutionResponse(
+            status=ExecutionStatus.SUCCESS, provider_ref="test-ref-123"
+        )
 
         quote = QuoteDTO(
             id=1,
@@ -101,7 +104,7 @@ async def test_order_execution_full_cycle_success(db_session, session_factory, m
 @pytest.mark.asyncio
 async def test_order_execution_retry_logic(db_session, session_factory, mock_asyncio_sleep):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow)
+    service = LiquidityService(uow, PROVIDERS_MAP)
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,
@@ -113,14 +116,14 @@ async def test_order_execution_retry_logic(db_session, session_factory, mock_asy
 
     with (
         patch(
-            "liquidity_orchestrator.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
+            "liquidity_orchestrator.integrations.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
         ) as mock_execute,
-        patch("liquidity_orchestrator.service.providers.provider_b.ProviderB.execute", new=mock_execute),
-        patch("liquidity_orchestrator.service.providers.provider_c.ProviderC.execute", new=mock_execute),
+        patch("liquidity_orchestrator.integrations.providers.provider_b.ProviderB.execute", new=mock_execute),
+        patch("liquidity_orchestrator.integrations.providers.provider_c.ProviderC.execute", new=mock_execute),
     ):
         mock_execute.side_effect = [
-            {"status": ExecutionStatus.TIMEOUT, "provider_ref": "ref-fail"},
-            {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref-success"},
+            ProviderExecutionResponse(status=ExecutionStatus.TIMEOUT, provider_ref="ref-fail"),
+            ProviderExecutionResponse(status=ExecutionStatus.SUCCESS, provider_ref="ref-success"),
         ]
 
         quote1 = QuoteDTO(
@@ -155,7 +158,7 @@ async def test_order_execution_retry_logic(db_session, session_factory, mock_asy
 @pytest.mark.asyncio
 async def test_order_execution_all_fail(db_session, session_factory, mock_asyncio_sleep):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow)
+    service = LiquidityService(uow, PROVIDERS_MAP)
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,
@@ -167,12 +170,12 @@ async def test_order_execution_all_fail(db_session, session_factory, mock_asynci
 
     with (
         patch(
-            "liquidity_orchestrator.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
+            "liquidity_orchestrator.integrations.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
         ) as mock_execute,
-        patch("liquidity_orchestrator.service.providers.provider_b.ProviderB.execute", new=mock_execute),
-        patch("liquidity_orchestrator.service.providers.provider_c.ProviderC.execute", new=mock_execute),
+        patch("liquidity_orchestrator.integrations.providers.provider_b.ProviderB.execute", new=mock_execute),
+        patch("liquidity_orchestrator.integrations.providers.provider_c.ProviderC.execute", new=mock_execute),
     ):
-        mock_execute.return_value = {"status": ExecutionStatus.DECLINE, "provider_ref": "ref-fail"}
+        mock_execute.return_value = ProviderExecutionResponse(status=ExecutionStatus.DECLINE, provider_ref="ref-fail")
 
         quote = QuoteDTO(
             id=1,

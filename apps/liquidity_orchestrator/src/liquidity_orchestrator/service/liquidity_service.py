@@ -9,23 +9,24 @@ from liquidity_orchestrator.domain.enums import OutboxEventType as OET
 from liquidity_orchestrator.domain.interfaces import IUnitOfWork
 from liquidity_orchestrator.domain.models import Order, Outbox, Quote
 from liquidity_orchestrator.domain.routing import build_execution_plan
+from liquidity_orchestrator.integrations.dto import (
+    ExecutionStatus,
+    GetQuoteRequest,
+    OrderExecutionRequest,
+    ProviderExecutionResponse,
+)
+from liquidity_orchestrator.integrations.interfaces import IProvider
 from liquidity_orchestrator.service.dto import (
     OrderCreateDTO,
     OrderDTO,
 )
 from liquidity_orchestrator.service.mixins import ProviderStatsMixin
-from liquidity_orchestrator.service.providers import (
-    PROVIDERS_LIST,
-    PROVIDERS_MAP,
-    ExecutionStatus,
-    IProvider,
-    OrderExecutionRequest,
-)
 
 
 class LiquidityService(ProviderStatsMixin):
-    def __init__(self, uow: IUnitOfWork):
+    def __init__(self, uow: IUnitOfWork, providers_map: dict[str, type[IProvider]]):
         self.uow = uow
+        self.providers_map = providers_map
 
     async def create_order(self, data: OrderCreateDTO) -> OrderDTO:
         order = Order.create(
@@ -75,7 +76,7 @@ class LiquidityService(ProviderStatsMixin):
         )
 
         for quote in execute_plan:
-            provider_cls = PROVIDERS_MAP.get(quote.provider_name)
+            provider_cls = self.providers_map.get(quote.provider_name)
             try:
                 request = self._build_provider_request(order_dto, quote)
                 response = await self._execute_request_by_provider(provider_cls, request)
@@ -102,7 +103,7 @@ class LiquidityService(ProviderStatsMixin):
                     self._fetch_provider_quote, order, provider_instance=provider_cls()
                 ),
             )
-            for provider_cls in PROVIDERS_LIST
+            for provider_cls in self.providers_map.values()
         ]
         results = list()
         async for t in asyncio.as_completed(tasks):
@@ -113,20 +114,21 @@ class LiquidityService(ProviderStatsMixin):
 
     async def _fetch_provider_quote(self, order: OrderDTO, provider_instance: IProvider) -> Quote | None:
         try:
-            res = await provider_instance.get_quote(
+            request = GetQuoteRequest(
                 direction=order.direction,
                 pair=order.pair,
                 amount_out=order.outgoing_amount,
             )
+            res = await provider_instance.get_quote(request)
 
             quote = Quote(
-                direction=res["direction"],
-                pair=res["pair"],
-                amount_in=res["amount_in"],
-                amount_out=res["amount_out"],
-                fee_rate=res["fee_rate"],
+                direction=res.direction,
+                pair=res.pair,
+                amount_in=res.amount_in,
+                amount_out=res.amount_out,
+                fee_rate=res.fee_rate,
                 provider_name=provider_instance.name,
-                valid_until=res["valid_until"],
+                valid_until=res.valid_until,
             )
             async with self.uow as u:
                 u.quotes.add(quote)
@@ -156,15 +158,17 @@ class LiquidityService(ProviderStatsMixin):
         logger.info(f"Send request for provider {provider_cls.name}")
         response = await provider_cls().execute(request)
         latency = time.perf_counter() - start_time
-        self._record_execution(provider_cls.name, latency, response["status"])
+        self._record_execution(provider_cls.name, latency, response.status)
         return response
 
-    async def _handle_execution_response(self, order_id: int, response: dict, quote: Quote) -> bool:
-        if response["status"] is ExecutionStatus.SUCCESS:
+    async def _handle_execution_response(
+        self, order_id: int, response: ProviderExecutionResponse, quote: Quote
+    ) -> bool:
+        if response.status is ExecutionStatus.SUCCESS:
             order_update_data = {
                 "status": OrderStatus.COMPLETED,
                 "quote_id": str(quote.id) if quote.id else None,
-                "provider_ref": response["provider_ref"],
+                "provider_ref": response.provider_ref,
             }
             outbox_record = Outbox(
                 order_id=order_id,
@@ -173,7 +177,7 @@ class LiquidityService(ProviderStatsMixin):
                     "order_id": order_id,
                     "status": OrderStatus.COMPLETED.value,
                     "quote_id": quote.id,
-                    "provider_ref": response["provider_ref"],
+                    "provider_ref": response.provider_ref,
                     "provider_name": quote.provider_name,
                     "amount_in": float(quote.amount_in) if quote.amount_in else None,
                     "amount_out": float(quote.amount_out) if quote.amount_out else None,
@@ -190,7 +194,7 @@ class LiquidityService(ProviderStatsMixin):
                 event_type=OET.ORDER_FALLBACK,
                 payload={
                     "order_id": order_id,
-                    "status": response["status"].value,
+                    "status": response.status.value,
                     "quote_id": quote.id,
                     "provider_name": quote.provider_name,
                 },

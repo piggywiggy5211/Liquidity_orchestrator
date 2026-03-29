@@ -1,10 +1,9 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, computed_field
 
-from liquidity_orchestrator.domain.enums import OrderStatus, OutboxEventType, QuoteDirection
+from liquidity_orchestrator.domain.enums import OrderStatus, QuoteDirection
 
 
 class BaseDTO(BaseModel):
@@ -46,12 +45,4 @@ class QuoteDTO(BaseDTO):
     pair: str | None = None
     amount_out: Decimal | None = None
     valid_until: datetime | None = None
-    id: int | None = None
-
-
-class OutboxDTO(BaseDTO):
-    order_id: int | None = None
-    event_type: OutboxEventType | None = None
-    payload: dict[str, Any] | None = None
-    created_at: datetime | None = None
     id: int | None = None

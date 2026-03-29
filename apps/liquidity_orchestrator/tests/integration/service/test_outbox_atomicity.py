@@ -5,16 +5,17 @@ import pytest
 from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
 from liquidity_orchestrator.domain.enums import OrderStatus, QuoteDirection
 from liquidity_orchestrator.domain.models import Order, Outbox
+from liquidity_orchestrator.integrations.dto import ExecutionStatus, ProviderExecutionResponse
+from liquidity_orchestrator.integrations.providers import PROVIDERS_MAP
 from liquidity_orchestrator.service.dto import OrderCreateDTO, QuoteDTO
 from liquidity_orchestrator.service.liquidity_service import LiquidityService
-from liquidity_orchestrator.service.providers import ExecutionStatus
 from sqlalchemy import select
 
 
 @pytest.mark.asyncio
 async def test_outbox_atomicity_rollback(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow)
+    service = LiquidityService(uow, PROVIDERS_MAP)
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,
@@ -41,12 +42,14 @@ async def test_outbox_atomicity_rollback(db_session, session_factory):
     # Mock provider execution as successful
     with (
         patch(
-            "liquidity_orchestrator.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
+            "liquidity_orchestrator.integrations.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
         ) as mock_execute,
-        patch("liquidity_orchestrator.service.providers.provider_b.ProviderB.execute", new=mock_execute),
-        patch("liquidity_orchestrator.service.providers.provider_c.ProviderC.execute", new=mock_execute),
+        patch("liquidity_orchestrator.integrations.providers.provider_b.ProviderB.execute", new=mock_execute),
+        patch("liquidity_orchestrator.integrations.providers.provider_c.ProviderC.execute", new=mock_execute),
     ):
-        mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "test-ref-123"}
+        mock_execute.return_value = ProviderExecutionResponse(
+            status=ExecutionStatus.SUCCESS, provider_ref="test-ref-123"
+        )
 
         real_commit = uow.commit
 
@@ -83,7 +86,7 @@ async def test_outbox_atomicity_success(db_session, session_factory):
     Additional test: verify that both changes are saved on regular success.
     """
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow)
+    service = LiquidityService(uow, PROVIDERS_MAP)
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,
@@ -108,12 +111,14 @@ async def test_outbox_atomicity_success(db_session, session_factory):
 
     with (
         patch(
-            "liquidity_orchestrator.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
+            "liquidity_orchestrator.integrations.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
         ) as mock_execute,
-        patch("liquidity_orchestrator.service.providers.provider_b.ProviderB.execute", new=mock_execute),
-        patch("liquidity_orchestrator.service.providers.provider_c.ProviderC.execute", new=mock_execute),
+        patch("liquidity_orchestrator.integrations.providers.provider_b.ProviderB.execute", new=mock_execute),
+        patch("liquidity_orchestrator.integrations.providers.provider_c.ProviderC.execute", new=mock_execute),
     ):
-        mock_execute.return_value = {"status": ExecutionStatus.SUCCESS, "provider_ref": "success-ref"}
+        mock_execute.return_value = ProviderExecutionResponse(
+            status=ExecutionStatus.SUCCESS, provider_ref="success-ref"
+        )
 
         await service.execute_order(order_id)
 

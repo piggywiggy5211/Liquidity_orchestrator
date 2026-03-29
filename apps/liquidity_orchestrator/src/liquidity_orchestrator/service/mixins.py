@@ -3,7 +3,7 @@ from bisect import bisect_left
 from collections import defaultdict
 
 from liquidity_orchestrator.core.config import settings
-from liquidity_orchestrator.service.providers import ExecutionStatus
+from liquidity_orchestrator.integrations.dto import ExecutionStatus
 
 
 class ProviderStatsMixin:

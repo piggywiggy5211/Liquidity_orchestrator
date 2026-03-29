@@ -31,14 +31,14 @@ class UnitOfWorkSqlAlchemy:
     def outbox(self) -> OutboxRepository:
         return OutboxRepository(self._session)
 
-    async def commit(self):
+    async def commit(self) -> None:
         try:
             await self._session.commit()
         except StaleDataError:
             logger.error("it was updated by another process")
             raise
 
-    async def rollback(self):
+    async def rollback(self) -> None:
         await self._session.rollback()
 
     async def switch_session_context_for_task(self, func: Callable, *args: Any, **kwargs: Any) -> Any:
@@ -49,8 +49,8 @@ class UnitOfWorkSqlAlchemy:
             finally:
                 self.ctx_session.reset(token)
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "UnitOfWorkSqlAlchemy":
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.rollback()

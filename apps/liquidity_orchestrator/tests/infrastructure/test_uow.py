@@ -4,8 +4,13 @@ from decimal import Decimal
 
 import pytest
 from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
-from liquidity_orchestrator.domain.enums import OrderStatus, OutboxEventType, QuoteDirection
+from liquidity_orchestrator.domain.enums import (
+    OrderStatus,
+    OutboxEventType,
+    QuoteDirection,
+)
 from liquidity_orchestrator.domain.models import Order, Outbox, Quote
+from liquidity_orchestrator.integrations.providers import PROVIDERS_MAP
 from liquidity_orchestrator.service.liquidity_service import LiquidityService
 from sqlalchemy import select
 
@@ -16,7 +21,7 @@ async def test_context_session_isolation(db_session, session_factory):
     Test that uow.switch_session_context_for_task provides a new session and restores the original one.
     """
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow)
+    service = LiquidityService(uow, PROVIDERS_MAP)
 
     main_session_id = id(uow._session)
 
@@ -38,7 +43,7 @@ async def test_parallel_context_sessions(db_session, session_factory):
     Test that multiple tasks running in parallel have their own unique sessions.
     """
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow)
+    service = LiquidityService(uow, PROVIDERS_MAP)
 
     async def delayed_session_id():
         s_id = id(uow._session)
@@ -63,7 +68,7 @@ async def test_nested_context_sessions(db_session, session_factory):
     Test that nested uow.switch_session_context_for_task (if ever used) would handle context correctly.
     """
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow)
+    service = LiquidityService(uow, PROVIDERS_MAP)
 
     main_session_id = id(uow._session)
 

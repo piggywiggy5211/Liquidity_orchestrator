@@ -5,15 +5,16 @@ import pytest
 from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
 from liquidity_orchestrator.domain.enums import OrderStatus, QuoteDirection
 from liquidity_orchestrator.domain.models import Order
+from liquidity_orchestrator.integrations.dto import ExecutionStatus, ProviderExecutionResponse
+from liquidity_orchestrator.integrations.providers import PROVIDERS_MAP
 from liquidity_orchestrator.service.dto import OrderCreateDTO, QuoteDTO
 from liquidity_orchestrator.service.liquidity_service import LiquidityService
-from liquidity_orchestrator.service.providers import ExecutionStatus
 
 
 @pytest.mark.asyncio
 async def test_fallback_best_fails_next_succeeds(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow)
+    service = LiquidityService(uow, PROVIDERS_MAP)
 
     # 1. Create order
     order_in = OrderCreateDTO(
@@ -69,14 +70,14 @@ async def test_fallback_best_fails_next_succeeds(db_session, session_factory):
 
         with (
             patch(
-                "liquidity_orchestrator.service.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
+                "liquidity_orchestrator.integrations.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
             ) as mock_execute,
-            patch("liquidity_orchestrator.service.providers.provider_b.ProviderB.execute", new=mock_execute),
-            patch("liquidity_orchestrator.service.providers.provider_c.ProviderC.execute", new=mock_execute),
+            patch("liquidity_orchestrator.integrations.providers.provider_b.ProviderB.execute", new=mock_execute),
+            patch("liquidity_orchestrator.integrations.providers.provider_c.ProviderC.execute", new=mock_execute),
         ):
             mock_execute.side_effect = [
-                {"status": ExecutionStatus.TIMEOUT, "provider_ref": "ref-fail-a"},
-                {"status": ExecutionStatus.SUCCESS, "provider_ref": "ref-success-b"},
+                ProviderExecutionResponse(status=ExecutionStatus.TIMEOUT, provider_ref="ref-fail-a"),
+                ProviderExecutionResponse(status=ExecutionStatus.SUCCESS, provider_ref="ref-success-b"),
             ]
 
             await service.execute_order(order_id)

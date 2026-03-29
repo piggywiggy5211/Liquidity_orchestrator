@@ -5,6 +5,8 @@ from liquidity_orchestrator.core.config import Settings
 from liquidity_orchestrator.database.db_helper import DatabaseHelper
 from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
 from liquidity_orchestrator.domain.interfaces import IUnitOfWork
+from liquidity_orchestrator.integrations.interfaces import IProvider
+from liquidity_orchestrator.integrations.providers import PROVIDERS_MAP
 from liquidity_orchestrator.service.liquidity_service import LiquidityService
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
@@ -38,5 +40,12 @@ class DatabaseProvider(Provider):
 class ServiceProvider(Provider):
     scope = Scope.REQUEST
 
-    uow = provide(UnitOfWorkSqlAlchemy, provides=IUnitOfWork)
+    @provide
+    def get_uow(self, session_factory: async_sessionmaker[AsyncSession], session: AsyncSession) -> IUnitOfWork:
+        return UnitOfWorkSqlAlchemy(session_factory, session)
+
     service = provide(LiquidityService)
+
+    @provide(scope=Scope.APP)
+    def get_providers_map(self) -> dict[str, type[IProvider]]:
+        return PROVIDERS_MAP
