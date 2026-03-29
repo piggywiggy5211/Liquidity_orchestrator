@@ -3,12 +3,8 @@ from typing import AsyncIterable
 from dishka import Provider, Scope, provide
 from liquidity_orchestrator.core.config import Settings
 from liquidity_orchestrator.database.db_helper import DatabaseHelper
-from liquidity_orchestrator.database.repositories.order import OrderRepository
-from liquidity_orchestrator.database.repositories.outbox import OutboxRepository
-from liquidity_orchestrator.database.repositories.quote import QuoteRepository
 from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
-from liquidity_orchestrator.domain.interfaces import IRepository, IUnitOfWork
-from liquidity_orchestrator.domain.models import Order, Outbox, Quote
+from liquidity_orchestrator.domain.interfaces import IUnitOfWork
 from liquidity_orchestrator.service.liquidity_service import LiquidityService
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
@@ -44,15 +40,3 @@ class ServiceProvider(Provider):
 
     uow = provide(UnitOfWorkSqlAlchemy, provides=IUnitOfWork)
     service = provide(LiquidityService)
-
-    @provide  # TODO FIX не должно быть своих сессий, возможно оставить один uow
-    def get_order_repository(self, session: AsyncSession) -> IRepository[Order]:
-        return OrderRepository(session)
-
-    @provide
-    def get_quote_repository(self, session: AsyncSession) -> IRepository[Quote]:
-        return QuoteRepository(session)
-
-    @provide
-    def get_outbox_repository(self, session: AsyncSession) -> IRepository[Outbox]:
-        return OutboxRepository(session)

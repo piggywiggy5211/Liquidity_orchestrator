@@ -10,6 +10,8 @@ from .base import BaseProvider, ExecutionStatus, OrderExecutionRequest
 
 
 class ProviderA(BaseProvider):
+    name = "ProviderA"
+
     async def get_quote(
         self,
         direction: QuoteDirection,

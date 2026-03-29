@@ -28,7 +28,7 @@ def _get_providers() -> Sequence[type[IProvider]]:
 @cache
 def _get_providers_map() -> dict[str, type[IProvider]]:
     """Returns a map of provider names to provider classes."""
-    return {p.__name__: p for p in _get_providers()}
+    return {p.name: p for p in _get_providers()}
 
 
 def __getattr__(name):

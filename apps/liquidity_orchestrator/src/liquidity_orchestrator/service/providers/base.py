@@ -28,6 +28,8 @@ class OrderExecutionRequest(BaseModel):
 
 
 class IProvider(Protocol):
+    name: str
+
     async def get_quote(  # TODO ADD DTO
         self,
         direction: QuoteDirection,
@@ -39,6 +41,8 @@ class IProvider(Protocol):
 
 
 class BaseProvider(ABC):
+    name: str
+
     @abc.abstractmethod
     async def get_quote(  # TODO ADD DTO
         self,

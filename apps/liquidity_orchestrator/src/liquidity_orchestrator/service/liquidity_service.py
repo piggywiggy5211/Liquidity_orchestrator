@@ -125,22 +125,20 @@ class LiquidityService(ProviderStatsMixin):
                 amount_in=res["amount_in"],
                 amount_out=res["amount_out"],
                 fee_rate=res["fee_rate"],
-                provider_name=provider_instance.__class__.__name__,
+                provider_name=provider_instance.name,
                 valid_until=res["valid_until"],
             )
             async with self.uow as u:
                 u.quotes.add(quote)
                 await u.commit()
                 logger.info(
-                    f"Successfully saved quote id: {quote.id} from {provider_instance.__class__.__name__}"
-                    f" for order_id {order.id}",
+                    f"Successfully saved quote id: {quote.id} from {provider_instance.name} for order_id {order.id}",
                 )
                 return quote
 
         except Exception as e:
             logger.warning(
-                f"Failed to fetch or save quote from {provider_instance.__class__.__name__}"
-                f" for order_id {order.id}: {e}",
+                f"Failed to fetch or save quote from {provider_instance.name} for order_id {order.id}: {e}",
             )
             raise
 
@@ -155,10 +153,10 @@ class LiquidityService(ProviderStatsMixin):
 
     async def _execute_request_by_provider(self, provider_cls, request):
         start_time = time.perf_counter()  # TODO ПОПРАВИТЬ
-        logger.info(f"Send request for provider {provider_cls.__name__}")
+        logger.info(f"Send request for provider {provider_cls.name}")
         response = await provider_cls().execute(request)
         latency = time.perf_counter() - start_time
-        self._record_execution(provider_cls.__name__, latency, response["status"])
+        self._record_execution(provider_cls.name, latency, response["status"])
         return response
 
     async def _handle_execution_response(self, order_id: int, response: dict, quote: Quote) -> bool:
