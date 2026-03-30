@@ -1,6 +1,8 @@
-from typing import AsyncIterable
+from typing import AsyncGenerator, AsyncIterable, Mapping
 
+import httpx
 from dishka import Provider, Scope, provide
+from lib.http_client import LoggingAsyncClient
 from liquidity_orchestrator.core.config import Settings
 from liquidity_orchestrator.database.db_helper import DatabaseHelper
 from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
@@ -37,14 +39,20 @@ class DatabaseProvider(Provider):
 
 
 class ServiceProvider(Provider):
-    scope = Scope.REQUEST
+    @provide(scope=Scope.APP)
+    async def httpx_client(self) -> AsyncGenerator[httpx.AsyncClient]:
+        httpx_client = LoggingAsyncClient()
+        yield httpx_client
+        await httpx_client.aclose()
 
-    @provide
+    @provide(scope=Scope.REQUEST)
     def get_uow(self, session_factory: async_sessionmaker[AsyncSession], session: AsyncSession) -> IUnitOfWork:
         return UnitOfWorkSqlAlchemy(session_factory, session)
 
-    service = provide(LiquidityService)
-
     @provide(scope=Scope.APP)
-    def get_providers_map(self) -> dict[str, type[IProvider]]:
+    def get_providers_map(self, httpx_client: httpx.AsyncClient) -> Mapping[str, type[IProvider]]:
+        for p in PROVIDERS_MAP.values():
+            p.httpx_client = httpx_client
         return PROVIDERS_MAP
+
+    service = provide(source=LiquidityService, scope=Scope.REQUEST)

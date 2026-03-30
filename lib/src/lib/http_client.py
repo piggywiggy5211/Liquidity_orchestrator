@@ -77,7 +77,3 @@ class LoggingAsyncClient(httpx.AsyncClient):
                 logger.error(f"HTTP {request_name} CONNECTION ERROR\n URL: {url}\n ERROR: {str(exc)}")
             case _:
                 logger.error(f"HTTP {request_name} ERROR\n URL: {url}\n ERROR: {str(exc)}")
-
-
-def create_http_client() -> httpx.AsyncClient:
-    return LoggingAsyncClient()

@@ -3,7 +3,6 @@ from contextlib import asynccontextmanager
 from dishka import AsyncContainer
 from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
-from lib.http_client import create_http_client
 from lib.logger.logger import setup_logger
 from lib.middleware.logger_context import LoggerContextMiddleware
 from lib.middleware.logging_request_response import RequestResponseLoggingMiddleware
@@ -17,11 +16,9 @@ from liquidity_orchestrator.entrypoints.fastapi.router import api_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.http_client = create_http_client()
     try:
         yield
     finally:
-        await app.state.http_client.aclose()
         if hasattr(app.state, "dishka_container"):
             await app.state.dishka_container.close()
 

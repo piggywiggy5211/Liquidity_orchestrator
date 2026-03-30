@@ -1,5 +1,6 @@
 import asyncio
 import time
+from typing import Mapping
 
 from loguru import logger
 
@@ -22,7 +23,7 @@ from liquidity_orchestrator.service.mixins import ProviderStatsMixin
 
 
 class LiquidityService(ProviderStatsMixin):
-    def __init__(self, uow: IUnitOfWork, providers_map: dict[str, type[IProvider]]):
+    def __init__(self, uow: IUnitOfWork, providers_map: Mapping[str, type[IProvider]]):
         self.uow = uow
         self.providers_map = providers_map
 
