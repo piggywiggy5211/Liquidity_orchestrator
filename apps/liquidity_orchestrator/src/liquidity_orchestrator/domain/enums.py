@@ -17,3 +17,9 @@ class OutboxEventType(str, Enum):
     ORDER_FALLBACK = "ORDER_FALLBACK"
     ORDER_COMPLETED = "ORDER_COMPLETED"
     ORDER_FAILED = "ORDER_FAILED"
+
+
+class ProviderExecutionStatus(str, Enum):
+    SUCCESS = "success"
+    DECLINE = "decline"
+    TIMEOUT = "timeout"

@@ -4,18 +4,16 @@ import time
 from loguru import logger
 
 from liquidity_orchestrator.core.config import settings
-from liquidity_orchestrator.domain.enums import OrderStatus
+from liquidity_orchestrator.domain.enums import OrderStatus, ProviderExecutionStatus
 from liquidity_orchestrator.domain.enums import OutboxEventType as OET
-from liquidity_orchestrator.domain.interfaces import IUnitOfWork
+from liquidity_orchestrator.domain.interfaces import IProvider, IUnitOfWork
 from liquidity_orchestrator.domain.models import Order, Outbox, Quote
-from liquidity_orchestrator.domain.routing import build_execution_plan
-from liquidity_orchestrator.integrations.dto import (
-    ExecutionStatus,
-    GetQuoteRequest,
-    OrderExecutionRequest,
+from liquidity_orchestrator.domain.provider_dto import (
     ProviderExecutionResponse,
+    ProviderGetQuoteRequest,
+    ProviderOrderExecutionRequest,
 )
-from liquidity_orchestrator.integrations.interfaces import IProvider
+from liquidity_orchestrator.domain.routing import build_execution_plan
 from liquidity_orchestrator.service.dto import (
     OrderCreateDTO,
     OrderDTO,
@@ -114,7 +112,7 @@ class LiquidityService(ProviderStatsMixin):
 
     async def _fetch_provider_quote(self, order: OrderDTO, provider_instance: IProvider) -> Quote | None:
         try:
-            request = GetQuoteRequest(
+            request = ProviderGetQuoteRequest(
                 direction=order.direction,
                 pair=order.pair,
                 amount_out=order.outgoing_amount,
@@ -144,8 +142,8 @@ class LiquidityService(ProviderStatsMixin):
             )
             raise
 
-    def _build_provider_request(self, order_dto: OrderDTO, quote: Quote) -> OrderExecutionRequest:
-        return OrderExecutionRequest(
+    def _build_provider_request(self, order_dto: OrderDTO, quote: Quote) -> ProviderOrderExecutionRequest:
+        return ProviderOrderExecutionRequest(
             direction=order_dto.direction,
             pair=order_dto.pair,
             amount=quote.amount_in,
@@ -164,7 +162,7 @@ class LiquidityService(ProviderStatsMixin):
     async def _handle_execution_response(
         self, order_id: int, response: ProviderExecutionResponse, quote: Quote
     ) -> bool:
-        if response.status is ExecutionStatus.SUCCESS:
+        if response.status is ProviderExecutionStatus.SUCCESS:
             order_update_data = {
                 "status": OrderStatus.COMPLETED,
                 "quote_id": str(quote.id) if quote.id else None,

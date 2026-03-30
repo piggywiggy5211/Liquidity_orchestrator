@@ -1,19 +1,19 @@
 import httpx
 from liquidity_orchestrator.core.config import settings
-from liquidity_orchestrator.integrations.dto import (
-    ExecutionStatus,
-    GetQuoteRequest,
-    OrderExecutionRequest,
+from liquidity_orchestrator.domain.enums import ProviderExecutionStatus
+from liquidity_orchestrator.domain.interfaces import IProvider
+from liquidity_orchestrator.domain.provider_dto import (
     ProviderExecutionResponse,
+    ProviderGetQuoteRequest,
+    ProviderOrderExecutionRequest,
     ProviderQuoteResponse,
 )
-from liquidity_orchestrator.integrations.interfaces import IProvider
 
 
 class ProviderB(IProvider):
     name = "ProviderB"
 
-    async def get_quote(self, request: GetQuoteRequest) -> ProviderQuoteResponse:
+    async def get_quote(self, request: ProviderGetQuoteRequest) -> ProviderQuoteResponse:
         params = {
             "direction": request.direction,
             "pair": request.pair,
@@ -23,9 +23,9 @@ class ProviderB(IProvider):
         async with httpx.AsyncClient() as client:
             response = await client.get(f"{settings.mock_provider_url}/provider_b/quote", params=params)
             response.raise_for_status()
-            return ProviderQuoteResponse(**response.json())
+            return ProviderQuoteResponse.model_validate(response.json())
 
-    async def execute(self, order: OrderExecutionRequest) -> ProviderExecutionResponse:
+    async def execute(self, order: ProviderOrderExecutionRequest) -> ProviderExecutionResponse:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -39,10 +39,8 @@ class ProviderB(IProvider):
                     },
                 )
                 response.raise_for_status()
-                data = response.json()
-                status = ExecutionStatus.SUCCESS if data["status"] == "SUCCESS" else ExecutionStatus.DECLINE
-                return ProviderExecutionResponse(status=status, provider_ref=data["provider_ref"])
+                return ProviderExecutionResponse.model_validate(response.json())
         except httpx.ReadTimeout:
-            return ProviderExecutionResponse(status=ExecutionStatus.TIMEOUT, provider_ref=None)
+            return ProviderExecutionResponse(status=ProviderExecutionStatus.TIMEOUT, provider_ref=None)
         except Exception:
-            return ProviderExecutionResponse(status=ExecutionStatus.DECLINE, provider_ref=None)
+            return ProviderExecutionResponse(status=ProviderExecutionStatus.DECLINE, provider_ref=None)

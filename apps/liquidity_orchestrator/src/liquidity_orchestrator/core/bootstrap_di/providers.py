@@ -4,8 +4,7 @@ from dishka import Provider, Scope, provide
 from liquidity_orchestrator.core.config import Settings
 from liquidity_orchestrator.database.db_helper import DatabaseHelper
 from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
-from liquidity_orchestrator.domain.interfaces import IUnitOfWork
-from liquidity_orchestrator.integrations.interfaces import IProvider
+from liquidity_orchestrator.domain.interfaces import IProvider, IUnitOfWork
 from liquidity_orchestrator.integrations.providers import PROVIDERS_MAP
 from liquidity_orchestrator.service.liquidity_service import LiquidityService
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker

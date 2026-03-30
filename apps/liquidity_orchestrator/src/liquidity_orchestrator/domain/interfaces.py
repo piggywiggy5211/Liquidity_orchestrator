@@ -1,6 +1,12 @@
 from typing import Any, Callable, Optional, Protocol, Sequence
 
 from .models import Order, Outbox, Quote
+from .provider_dto import (
+    ProviderExecutionResponse,
+    ProviderGetQuoteRequest,
+    ProviderOrderExecutionRequest,
+    ProviderQuoteResponse,
+)
 
 
 class IRepository[ModelType](Protocol):
@@ -32,3 +38,11 @@ class IUnitOfWork(Protocol):
     async def __aenter__(self) -> "IUnitOfWork": ...
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None: ...
+
+
+class IProvider(Protocol):
+    name: str
+
+    async def get_quote(self, request: ProviderGetQuoteRequest) -> ProviderQuoteResponse: ...
+
+    async def execute(self, order: ProviderOrderExecutionRequest) -> ProviderExecutionResponse: ...

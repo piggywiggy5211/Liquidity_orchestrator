@@ -35,19 +35,19 @@ tasks:
     desc: Run tests ONLY for the shared library
     dir: lib
     cmds:
-      - uv run pytest -vv
+      - uv run pytest
 
   test:orchestrator:
     desc: Run tests ONLY for the main application
     dir: apps/liquidity_orchestrator
     cmds:
-      - uv run pytest -vv
+      - uv run pytest
 
   test:mock:
     desc: Run tests ONLY for mock providers
     dir: apps/mock_providers
     cmds:
-      - uv run pytest -vv
+      - uv run pytest
 
   test:all:
     desc: Run all tests in the monorepo

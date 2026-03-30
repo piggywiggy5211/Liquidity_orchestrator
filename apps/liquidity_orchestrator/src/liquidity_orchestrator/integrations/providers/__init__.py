@@ -3,8 +3,7 @@ import pkgutil
 from functools import cache
 from typing import TYPE_CHECKING, Sequence
 
-from liquidity_orchestrator.integrations.dto import ExecutionStatus, OrderExecutionRequest
-from liquidity_orchestrator.integrations.interfaces import IProvider
+from liquidity_orchestrator.domain.interfaces import IProvider
 
 
 if TYPE_CHECKING:
@@ -42,9 +41,4 @@ def __getattr__(name):
 # provider_map = {p.__name__: p for p in PROVIDERS}
 
 
-__all__ = (
-    "IProvider",
-    "ExecutionStatus",
-    "OrderExecutionRequest",
-    "PROVIDERS_MAP",
-)
+__all__ = ("PROVIDERS_MAP",)

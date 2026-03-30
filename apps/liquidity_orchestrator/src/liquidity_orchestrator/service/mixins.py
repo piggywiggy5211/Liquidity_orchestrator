@@ -3,15 +3,15 @@ from bisect import bisect_left
 from collections import defaultdict
 
 from liquidity_orchestrator.core.config import settings
-from liquidity_orchestrator.integrations.dto import ExecutionStatus
+from liquidity_orchestrator.domain.enums import ProviderExecutionStatus
 
 
 class ProviderStatsMixin:
     _stats: dict[str, dict[str, list]] = defaultdict(lambda: {"latency": [], "availability": []})
 
-    def _record_execution(self, provider_name: str, latency: float, status: ExecutionStatus):
+    def _record_execution(self, provider_name: str, latency: float, status: ProviderExecutionStatus):
         now = time.time()
-        is_timeout = status == ExecutionStatus.TIMEOUT
+        is_timeout = status == ProviderExecutionStatus.TIMEOUT
         if not is_timeout:
             self._stats[provider_name]["latency"].append((now, latency))
         self._stats[provider_name]["availability"].append((now, is_timeout))

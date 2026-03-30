@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
-from liquidity_orchestrator.domain.enums import QuoteDirection
-from liquidity_orchestrator.integrations.dto import ExecutionStatus, ProviderExecutionResponse
+from liquidity_orchestrator.domain.enums import ProviderExecutionStatus, QuoteDirection
+from liquidity_orchestrator.domain.provider_dto import ProviderExecutionResponse
 from liquidity_orchestrator.integrations.providers import PROVIDERS_MAP
 from liquidity_orchestrator.service.dto import OrderCreateDTO, QuoteDTO
 from liquidity_orchestrator.service.liquidity_service import LiquidityService
@@ -22,9 +22,9 @@ async def test_provider_stats_mixin_logic(db_session, session_factory):
     service = LiquidityService(uow, PROVIDERS_MAP)
 
     # Test recording stats directly first to verify mixin logic
-    service._record_execution("ProviderA", 0.1, ExecutionStatus.SUCCESS)
-    service._record_execution("ProviderA", 0.2, ExecutionStatus.TIMEOUT)
-    service._record_execution("ProviderB", 0.5, ExecutionStatus.SUCCESS)
+    service._record_execution("ProviderA", 0.1, ProviderExecutionStatus.SUCCESS)
+    service._record_execution("ProviderA", 0.2, ProviderExecutionStatus.TIMEOUT)
+    service._record_execution("ProviderB", 0.5, ProviderExecutionStatus.SUCCESS)
 
     assert service.average_latency["ProviderA"] == pytest.approx(0.1)
     assert service.average_latency["ProviderB"] == pytest.approx(0.5)
@@ -42,11 +42,11 @@ async def test_provider_stats_moving_window(db_session, session_factory):
         start_t = 1000.0
         mock_time.return_value = start_t
 
-        service._record_execution("ProviderA", 0.1, ExecutionStatus.SUCCESS)
+        service._record_execution("ProviderA", 0.1, ProviderExecutionStatus.SUCCESS)
 
         # Move time forward by 30 seconds
         mock_time.return_value = start_t + 30.0
-        service._record_execution("ProviderA", 0.2, ExecutionStatus.SUCCESS)
+        service._record_execution("ProviderA", 0.2, ProviderExecutionStatus.SUCCESS)
 
         # Move time forward by another 40 seconds (total 70s from start)
         # First record should be cleaned up (window is 60s)
@@ -83,8 +83,12 @@ async def test_provider_stats_integration_in_execute_order(db_session, session_f
             "liquidity_orchestrator.integrations.providers.provider_b.ProviderB.execute", new_callable=AsyncMock
         ) as mock_exec_b,
     ):
-        mock_exec_a.return_value = ProviderExecutionResponse(status=ExecutionStatus.TIMEOUT, provider_ref="ref1")
-        mock_exec_b.return_value = ProviderExecutionResponse(status=ExecutionStatus.SUCCESS, provider_ref="ref2")
+        mock_exec_a.return_value = ProviderExecutionResponse(
+            status=ProviderExecutionStatus.TIMEOUT, provider_ref="ref1"
+        )
+        mock_exec_b.return_value = ProviderExecutionResponse(
+            status=ProviderExecutionStatus.SUCCESS, provider_ref="ref2"
+        )
 
         # Mock time to control latency measurement
         with patch("time.time") as mock_time, patch("time.perf_counter") as mock_perf:

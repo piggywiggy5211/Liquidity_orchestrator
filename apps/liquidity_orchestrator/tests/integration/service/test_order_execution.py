@@ -3,9 +3,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
-from liquidity_orchestrator.domain.enums import OrderStatus, QuoteDirection
+from liquidity_orchestrator.domain.enums import OrderStatus, ProviderExecutionStatus, QuoteDirection
 from liquidity_orchestrator.domain.models import Order
-from liquidity_orchestrator.integrations.dto import ExecutionStatus, ProviderExecutionResponse
+from liquidity_orchestrator.domain.provider_dto import ProviderExecutionResponse
 from liquidity_orchestrator.integrations.providers import PROVIDERS_MAP
 from liquidity_orchestrator.service.dto import OrderCreateDTO, QuoteDTO
 from liquidity_orchestrator.service.liquidity_service import LiquidityService
@@ -31,7 +31,9 @@ async def test_liquidity_service_basic_flow(db_session, session_factory, mock_as
         patch("liquidity_orchestrator.integrations.providers.provider_b.ProviderB.execute", new=mock_execute),
         patch("liquidity_orchestrator.integrations.providers.provider_c.ProviderC.execute", new=mock_execute),
     ):
-        mock_execute.return_value = ProviderExecutionResponse(status=ExecutionStatus.SUCCESS, provider_ref="ref-123")
+        mock_execute.return_value = ProviderExecutionResponse(
+            status=ProviderExecutionStatus.SUCCESS, provider_ref="ref-123"
+        )
 
         quote = QuoteDTO(
             id=1,
@@ -77,7 +79,7 @@ async def test_order_execution_full_cycle_success(db_session, session_factory, m
         patch("liquidity_orchestrator.integrations.providers.provider_c.ProviderC.execute", new=mock_execute),
     ):
         mock_execute.return_value = ProviderExecutionResponse(
-            status=ExecutionStatus.SUCCESS, provider_ref="test-ref-123"
+            status=ProviderExecutionStatus.SUCCESS, provider_ref="test-ref-123"
         )
 
         quote = QuoteDTO(
@@ -122,8 +124,8 @@ async def test_order_execution_retry_logic(db_session, session_factory, mock_asy
         patch("liquidity_orchestrator.integrations.providers.provider_c.ProviderC.execute", new=mock_execute),
     ):
         mock_execute.side_effect = [
-            ProviderExecutionResponse(status=ExecutionStatus.TIMEOUT, provider_ref="ref-fail"),
-            ProviderExecutionResponse(status=ExecutionStatus.SUCCESS, provider_ref="ref-success"),
+            ProviderExecutionResponse(status=ProviderExecutionStatus.TIMEOUT, provider_ref="ref-fail"),
+            ProviderExecutionResponse(status=ProviderExecutionStatus.SUCCESS, provider_ref="ref-success"),
         ]
 
         quote1 = QuoteDTO(
@@ -175,7 +177,9 @@ async def test_order_execution_all_fail(db_session, session_factory, mock_asynci
         patch("liquidity_orchestrator.integrations.providers.provider_b.ProviderB.execute", new=mock_execute),
         patch("liquidity_orchestrator.integrations.providers.provider_c.ProviderC.execute", new=mock_execute),
     ):
-        mock_execute.return_value = ProviderExecutionResponse(status=ExecutionStatus.DECLINE, provider_ref="ref-fail")
+        mock_execute.return_value = ProviderExecutionResponse(
+            status=ProviderExecutionStatus.DECLINE, provider_ref="ref-fail"
+        )
 
         quote = QuoteDTO(
             id=1,

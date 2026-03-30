@@ -1,18 +1,13 @@
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from typing import Any
 
-from liquidity_orchestrator.domain.enums import QuoteDirection
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
-
-class ExecutionStatus(str, Enum):
-    SUCCESS = "success"
-    DECLINE = "decline"
-    TIMEOUT = "timeout"
+from liquidity_orchestrator.domain.enums import ProviderExecutionStatus, QuoteDirection
 
 
-class OrderExecutionRequest(BaseModel):
+class ProviderOrderExecutionRequest(BaseModel):
     direction: QuoteDirection
     pair: str = Field(
         ...,
@@ -24,7 +19,7 @@ class OrderExecutionRequest(BaseModel):
     outgoing_account: str
 
 
-class GetQuoteRequest(BaseModel):
+class ProviderGetQuoteRequest(BaseModel):
     direction: QuoteDirection
     pair: str = Field(
         ...,
@@ -44,5 +39,15 @@ class ProviderQuoteResponse(BaseModel):
 
 
 class ProviderExecutionResponse(BaseModel):
-    status: ExecutionStatus
+    status: ProviderExecutionStatus
     provider_ref: str | None
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def validate_status(cls, value: Any) -> ProviderExecutionStatus | Any:
+        if isinstance(value, str):
+            if value == "SUCCESS":
+                return ProviderExecutionStatus.SUCCESS
+            if value == "DECLINE":
+                return ProviderExecutionStatus.DECLINE
+        return value
