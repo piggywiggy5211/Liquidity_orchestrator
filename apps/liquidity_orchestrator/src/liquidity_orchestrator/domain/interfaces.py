@@ -1,5 +1,7 @@
 from typing import Any, Callable, Optional, Protocol, Sequence
 
+from liquidity_orchestrator.domain.enums import ProviderExecutionStatus
+
 from .models import Order, Outbox, Quote
 from .provider_dto import (
     ProviderExecutionResponse,
@@ -46,3 +48,13 @@ class IProvider(Protocol):
     async def get_quote(self, request: ProviderGetQuoteRequest) -> ProviderQuoteResponse: ...
 
     async def execute(self, order: ProviderOrderExecutionRequest) -> ProviderExecutionResponse: ...
+
+
+class IMetricsCollector(Protocol):
+    def record_execution(self, provider_name: str, latency: float, status: ProviderExecutionStatus) -> None: ...
+
+    @property
+    def average_latency(self) -> dict[str, float]: ...
+
+    @property
+    def timeout_percentage(self) -> dict[str, float]: ...

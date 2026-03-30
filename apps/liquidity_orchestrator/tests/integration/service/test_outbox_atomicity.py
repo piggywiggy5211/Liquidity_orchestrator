@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
 from liquidity_orchestrator.domain.enums import OrderStatus, ProviderExecutionStatus, QuoteDirection
+from liquidity_orchestrator.domain.metrics import InMemoryMetricsCollector
 from liquidity_orchestrator.domain.models import Order, Outbox
 from liquidity_orchestrator.domain.provider_dto import ProviderExecutionResponse
 from liquidity_orchestrator.integrations.providers import PROVIDERS_MAP
@@ -15,7 +16,7 @@ from sqlalchemy import select
 @pytest.mark.asyncio
 async def test_outbox_atomicity_rollback(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, PROVIDERS_MAP)
+    service = LiquidityService(uow, PROVIDERS_MAP, InMemoryMetricsCollector())
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,
@@ -86,7 +87,7 @@ async def test_outbox_atomicity_success(db_session, session_factory):
     Additional test: verify that both changes are saved on regular success.
     """
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, PROVIDERS_MAP)
+    service = LiquidityService(uow, PROVIDERS_MAP, InMemoryMetricsCollector())
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,

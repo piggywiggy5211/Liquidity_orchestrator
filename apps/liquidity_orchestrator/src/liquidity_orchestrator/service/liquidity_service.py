@@ -1,5 +1,4 @@
 import asyncio
-import time
 from typing import Mapping
 
 from loguru import logger
@@ -7,7 +6,7 @@ from loguru import logger
 from liquidity_orchestrator.core.config import settings
 from liquidity_orchestrator.domain.enums import OrderStatus, ProviderExecutionStatus
 from liquidity_orchestrator.domain.enums import OutboxEventType as OET
-from liquidity_orchestrator.domain.interfaces import IProvider, IUnitOfWork
+from liquidity_orchestrator.domain.interfaces import IMetricsCollector, IProvider, IUnitOfWork
 from liquidity_orchestrator.domain.models import Order, Outbox, Quote
 from liquidity_orchestrator.domain.provider_dto import (
     ProviderExecutionResponse,
@@ -19,13 +18,13 @@ from liquidity_orchestrator.service.dto import (
     OrderCreateDTO,
     OrderDTO,
 )
-from liquidity_orchestrator.service.mixins import ProviderStatsMixin
 
 
-class LiquidityService(ProviderStatsMixin):
-    def __init__(self, uow: IUnitOfWork, providers_map: Mapping[str, type[IProvider]]):
+class LiquidityService:
+    def __init__(self, uow: IUnitOfWork, providers_map: Mapping[str, type[IProvider]], metrics: IMetricsCollector):
         self.uow = uow
         self.providers_map = providers_map
+        self.metrics = metrics
 
     async def create_order(self, data: OrderCreateDTO) -> OrderDTO:
         order = Order.create(
@@ -34,7 +33,7 @@ class LiquidityService(ProviderStatsMixin):
             pair=data.pair,
             incoming_account=data.incoming_account,
             outgoing_account=data.outgoing_account,
-            commission_rate=settings.service_fee,
+            commission_rate=settings.service_fee,  # TODO fix
         )
         async with self.uow as u:
             u.orders.add(order)
@@ -69,8 +68,8 @@ class LiquidityService(ProviderStatsMixin):
         quotes = await self._fetch_quotes_from_providers(order_dto)
         execute_plan = build_execution_plan(
             quotes=quotes,
-            average_latencies=self.average_latency,
-            timeout_percentages=self.timeout_percentage,
+            average_latencies=self.metrics.average_latency,
+            timeout_percentages=self.metrics.timeout_percentage,
             order_id=order_id,
         )
 
@@ -152,12 +151,9 @@ class LiquidityService(ProviderStatsMixin):
             outgoing_account=order_dto.outgoing_account,
         )
 
-    async def _execute_request_by_provider(self, provider_cls, request):
-        start_time = time.perf_counter()  # TODO ПОПРАВИТЬ
+    async def _execute_request_by_provider(self, provider_cls, request) -> ProviderExecutionResponse:
         logger.info(f"Send request for provider {provider_cls.name}")
         response = await provider_cls().execute(request)
-        latency = time.perf_counter() - start_time
-        self._record_execution(provider_cls.name, latency, response.status)
         return response
 
     async def _handle_execution_response(

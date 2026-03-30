@@ -4,19 +4,21 @@ from collections import defaultdict
 
 from liquidity_orchestrator.core.config import settings
 from liquidity_orchestrator.domain.enums import ProviderExecutionStatus
+from liquidity_orchestrator.domain.interfaces import IMetricsCollector
 
 
-class ProviderStatsMixin:
-    _stats: dict[str, dict[str, list]] = defaultdict(lambda: {"latency": [], "availability": []})
+class InMemoryMetricsCollector(IMetricsCollector):
+    def __init__(self) -> None:
+        self._stats: dict[str, dict[str, list]] = defaultdict(lambda: {"latency": [], "availability": []})
 
-    def _record_execution(self, provider_name: str, latency: float, status: ProviderExecutionStatus):
+    def record_execution(self, provider_name: str, latency: float, status: ProviderExecutionStatus | None) -> None:
         now = time.time()
         is_timeout = status == ProviderExecutionStatus.TIMEOUT
         if not is_timeout:
             self._stats[provider_name]["latency"].append((now, latency))
         self._stats[provider_name]["availability"].append((now, is_timeout))
 
-    def _cleanup(self):
+    def _cleanup(self) -> None:
         now = time.time()
         cutoff = now - settings.stats_window_seconds
         for p_name in self._stats:

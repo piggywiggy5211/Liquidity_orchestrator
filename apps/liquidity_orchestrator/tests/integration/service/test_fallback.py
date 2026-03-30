@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, PropertyMock, patch
 import pytest
 from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
 from liquidity_orchestrator.domain.enums import OrderStatus, ProviderExecutionStatus, QuoteDirection
+from liquidity_orchestrator.domain.metrics import InMemoryMetricsCollector
 from liquidity_orchestrator.domain.models import Order
 from liquidity_orchestrator.domain.provider_dto import ProviderExecutionResponse
 from liquidity_orchestrator.integrations.providers import PROVIDERS_MAP
@@ -14,7 +15,7 @@ from liquidity_orchestrator.service.liquidity_service import LiquidityService
 @pytest.mark.asyncio
 async def test_fallback_best_fails_next_succeeds(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, PROVIDERS_MAP)
+    service = LiquidityService(uow, PROVIDERS_MAP, InMemoryMetricsCollector())
 
     # 1. Create order
     order_in = OrderCreateDTO(
@@ -62,8 +63,8 @@ async def test_fallback_best_fails_next_succeeds(db_session, session_factory):
     mock_timeouts = {"ProviderA": 0.0, "ProviderB": 0.0, "ProviderC": 0.0}
 
     with (
-        patch.object(LiquidityService, "average_latency", new_callable=PropertyMock) as mock_lat,
-        patch.object(LiquidityService, "timeout_percentage", new_callable=PropertyMock) as mock_tout,
+        patch.object(InMemoryMetricsCollector, "average_latency", new_callable=PropertyMock) as mock_lat,
+        patch.object(InMemoryMetricsCollector, "timeout_percentage", new_callable=PropertyMock) as mock_tout,
     ):
         mock_lat.return_value = mock_latency
         mock_tout.return_value = mock_timeouts

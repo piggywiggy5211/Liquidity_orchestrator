@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
 from liquidity_orchestrator.domain.enums import QuoteDirection
+from liquidity_orchestrator.domain.metrics import InMemoryMetricsCollector
 from liquidity_orchestrator.integrations.providers import PROVIDERS_MAP
 from liquidity_orchestrator.service.dto import OrderCreateDTO
 from liquidity_orchestrator.service.liquidity_service import LiquidityService
@@ -19,7 +20,7 @@ async def test_execute_order_parallel_conflict(session_factory):
     # 1. Create an order
     async with session_factory() as sess:
         uow = UnitOfWorkSqlAlchemy(session_factory, sess)
-        service = LiquidityService(uow, PROVIDERS_MAP)
+        service = LiquidityService(uow, PROVIDERS_MAP, InMemoryMetricsCollector())
         order_in = OrderCreateDTO(
             direction=QuoteDirection.ON_RAMP,
             pair="EUR-USD",
@@ -41,9 +42,9 @@ async def test_execute_order_parallel_conflict(session_factory):
             new_callable=AsyncMock,
             return_value=[],
         ):
-            service1 = LiquidityService(uow1, PROVIDERS_MAP)
-            service2 = LiquidityService(uow2, PROVIDERS_MAP)
-            service3 = LiquidityService(uow3, PROVIDERS_MAP)
+            service1 = LiquidityService(uow1, PROVIDERS_MAP, InMemoryMetricsCollector())
+            service2 = LiquidityService(uow2, PROVIDERS_MAP, InMemoryMetricsCollector())
+            service3 = LiquidityService(uow3, PROVIDERS_MAP, InMemoryMetricsCollector())
 
             results = await asyncio.gather(
                 service1.execute_order(order_id),

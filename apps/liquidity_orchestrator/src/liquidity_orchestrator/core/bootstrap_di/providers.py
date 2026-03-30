@@ -6,7 +6,8 @@ from lib.http_client import LoggingAsyncClient
 from liquidity_orchestrator.core.config import Settings
 from liquidity_orchestrator.database.db_helper import DatabaseHelper
 from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
-from liquidity_orchestrator.domain.interfaces import IProvider, IUnitOfWork
+from liquidity_orchestrator.domain.interfaces import IMetricsCollector, IProvider, IUnitOfWork
+from liquidity_orchestrator.domain.metrics import InMemoryMetricsCollector
 from liquidity_orchestrator.integrations.providers import PROVIDERS_MAP
 from liquidity_orchestrator.service.liquidity_service import LiquidityService
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
@@ -50,9 +51,16 @@ class ServiceProvider(Provider):
         return UnitOfWorkSqlAlchemy(session_factory, session)
 
     @provide(scope=Scope.APP)
-    def get_providers_map(self, httpx_client: httpx.AsyncClient) -> Mapping[str, type[IProvider]]:
+    def get_metrics_collector(self) -> IMetricsCollector:
+        return InMemoryMetricsCollector()
+
+    @provide(scope=Scope.APP)
+    def get_providers_map(
+        self, httpx_client: httpx.AsyncClient, metrics_collector: IMetricsCollector
+    ) -> Mapping[str, type[IProvider]]:
         for p in PROVIDERS_MAP.values():
             p.httpx_client = httpx_client
+            p.metrics_collector = metrics_collector
         return PROVIDERS_MAP
 
     service = provide(source=LiquidityService, scope=Scope.REQUEST)

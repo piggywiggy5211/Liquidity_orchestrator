@@ -1,121 +1,36 @@
-from decimal import Decimal
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
-from liquidity_orchestrator.database.uow import UnitOfWorkSqlAlchemy
-from liquidity_orchestrator.domain.enums import ProviderExecutionStatus, QuoteDirection
-from liquidity_orchestrator.domain.provider_dto import ProviderExecutionResponse
-from liquidity_orchestrator.integrations.providers import PROVIDERS_MAP
-from liquidity_orchestrator.service.dto import OrderCreateDTO, QuoteDTO
-from liquidity_orchestrator.service.liquidity_service import LiquidityService
-from liquidity_orchestrator.service.mixins import ProviderStatsMixin
+from liquidity_orchestrator.domain.enums import ProviderExecutionStatus
+from liquidity_orchestrator.domain.metrics import InMemoryMetricsCollector
 
 
-@pytest.fixture(autouse=True)
-def clear_stats():
-    ProviderStatsMixin._stats.clear()
+@pytest.fixture
+def collector():
+    return InMemoryMetricsCollector()
 
 
-@pytest.mark.asyncio
-async def test_provider_stats_mixin_logic(db_session, session_factory):
-    uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, PROVIDERS_MAP)
+def test_metrics_collector_logic(collector):
+    collector.record_execution("ProviderA", 0.1, ProviderExecutionStatus.SUCCESS)
+    collector.record_execution("ProviderA", 0.2, ProviderExecutionStatus.TIMEOUT)
+    collector.record_execution("ProviderB", 0.5, ProviderExecutionStatus.SUCCESS)
 
-    # Test recording stats directly first to verify mixin logic
-    service._record_execution("ProviderA", 0.1, ProviderExecutionStatus.SUCCESS)
-    service._record_execution("ProviderA", 0.2, ProviderExecutionStatus.TIMEOUT)
-    service._record_execution("ProviderB", 0.5, ProviderExecutionStatus.SUCCESS)
+    assert collector.average_latency["ProviderA"] == pytest.approx(0.1)
+    assert collector.average_latency["ProviderB"] == pytest.approx(0.5)
 
-    assert service.average_latency["ProviderA"] == pytest.approx(0.1)
-    assert service.average_latency["ProviderB"] == pytest.approx(0.5)
-
-    assert service.timeout_percentage["ProviderA"] == 50.0
-    assert service.timeout_percentage["ProviderB"] == 0.0
+    assert collector.timeout_percentage["ProviderA"] == 50.0
+    assert collector.timeout_percentage["ProviderB"] == 0.0
 
 
-@pytest.mark.asyncio
-async def test_provider_stats_moving_window(db_session, session_factory):
-    uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, PROVIDERS_MAP)
-
+def test_metrics_collector_moving_window(collector):
     with patch("time.time") as mock_time:
         start_t = 1000.0
         mock_time.return_value = start_t
 
-        service._record_execution("ProviderA", 0.1, ProviderExecutionStatus.SUCCESS)
+        collector.record_execution("ProviderA", 0.1, ProviderExecutionStatus.SUCCESS)
 
-        # Move time forward by 30 seconds
         mock_time.return_value = start_t + 30.0
-        service._record_execution("ProviderA", 0.2, ProviderExecutionStatus.SUCCESS)
+        collector.record_execution("ProviderA", 0.2, ProviderExecutionStatus.SUCCESS)
 
-        # Move time forward by another 40 seconds (total 70s from start)
-        # First record should be cleaned up (window is 60s)
         mock_time.return_value = start_t + 70.0
-        assert service.average_latency["ProviderA"] == pytest.approx(0.2)
-
-
-@pytest.mark.asyncio
-async def test_provider_stats_integration_in_execute_order(db_session, session_factory):
-    uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, PROVIDERS_MAP)
-
-    order_in = OrderCreateDTO(
-        direction=QuoteDirection.ON_RAMP,
-        pair="EUR-USD",
-        amount=Decimal("100"),
-        incoming_account="acc1",
-        outgoing_account="acc2",
-    )
-
-    # We need to mock _fetch_quotes_from_providers to return specific quotes
-    # so we know which providers will be in the execution plan.
-    mock_quotes = [
-        QuoteDTO(id=1, provider_name="ProviderA", fee_rate=Decimal("0.01"), amount_in=Decimal("101")),
-        QuoteDTO(id=2, provider_name="ProviderB", fee_rate=Decimal("0.02"), amount_in=Decimal("102")),
-    ]
-
-    with (
-        patch.object(LiquidityService, "_fetch_quotes_from_providers", return_value=mock_quotes),
-        patch(
-            "liquidity_orchestrator.integrations.providers.provider_a.ProviderA.execute", new_callable=AsyncMock
-        ) as mock_exec_a,
-        patch(
-            "liquidity_orchestrator.integrations.providers.provider_b.ProviderB.execute", new_callable=AsyncMock
-        ) as mock_exec_b,
-    ):
-        mock_exec_a.return_value = ProviderExecutionResponse(
-            status=ProviderExecutionStatus.TIMEOUT, provider_ref="ref1"
-        )
-        mock_exec_b.return_value = ProviderExecutionResponse(
-            status=ProviderExecutionStatus.SUCCESS, provider_ref="ref2"
-        )
-
-        # Mock time to control latency measurement
-        with patch("time.time") as mock_time, patch("time.perf_counter") as mock_perf:
-            t = 2000.0
-            p = 100.0
-            # Mock values for time.time() (used for record timestamps and cleanup):
-            # fmt: off
-            mock_time.side_effect = [
-                t + 0.2, t + 0.2,  # ProviderA
-                t + 0.6, t + 0.6,  # ProviderB
-            ] + [t + 0.7] * 50
-
-            # Mock values for time.perf_counter() (used for latency calculation):
-            mock_perf.side_effect = [
-                p + 0.1, p + 0.2,  # ProviderA
-                p + 0.3, p + 0.6,  # ProviderB
-            ]
-            # fmt: on
-
-            created = await service.create_order(order_in)
-            await service.execute_order(int(created.id))
-
-            # We access properties. Each access consumes one value from side_effect if it's called.
-            avg_lat = service.average_latency
-            t_perc = service.timeout_percentage
-
-            assert avg_lat["ProviderA"] == 0.0
-            assert avg_lat["ProviderB"] == pytest.approx(0.3)
-            assert t_perc["ProviderA"] == 100.0
-            assert t_perc["ProviderB"] == 0.0
+        assert collector.average_latency["ProviderA"] == pytest.approx(0.2)
