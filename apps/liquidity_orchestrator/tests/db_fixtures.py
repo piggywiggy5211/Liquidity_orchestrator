@@ -1,5 +1,5 @@
 import os
-from enum import Enum
+from enum import StrEnum
 from typing import AsyncGenerator, Generator
 
 import pytest
@@ -15,7 +15,7 @@ from testcontainers.postgres import PostgresContainer
 type DB_URL = str
 
 
-class TestDBType(str, Enum):
+class TestDBType(StrEnum):
     LOCAL = "LOCAL"
     TESTCONTAINER = "TESTCONTAINER"
 

@@ -1,25 +1,25 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class OrderStatus(str, Enum):
+class OrderStatus(StrEnum):
     NEW = "NEW"
     PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 
 
-class QuoteDirection(str, Enum):
+class QuoteDirection(StrEnum):
     ON_RAMP = "on-ramp"
     OFF_RAMP = "off-ramp"
 
 
-class OutboxEventType(str, Enum):
+class OutboxEventType(StrEnum):
     ORDER_FALLBACK = "ORDER_FALLBACK"
     ORDER_COMPLETED = "ORDER_COMPLETED"
     ORDER_FAILED = "ORDER_FAILED"
 
 
-class ProviderExecutionStatus(str, Enum):
+class ProviderExecutionStatus(StrEnum):
     SUCCESS = "success"
     DECLINE = "decline"
     TIMEOUT = "timeout"

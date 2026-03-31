@@ -1,11 +1,11 @@
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 
 from mock_providers.service.enums import QuoteDirection
 from pydantic import BaseModel, Field
 
 
-class ExecutionStatus(str, Enum):
+class ExecutionStatus(StrEnum):
     SUCCESS = "SUCCESS"
     TIMEOUT = "TIMEOUT"
     FAIL = "FAIL"

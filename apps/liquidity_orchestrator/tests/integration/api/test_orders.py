@@ -1,27 +1,50 @@
 import time
+from datetime import datetime, timezone
+
+import httpx
+import respx
 
 
-def test_create_order_endpoint(client, mock_asyncio_sleep, clear_idempotency_set):
-    response = client.post(
-        "/orders",
-        json={
-            "direction": "on-ramp",
-            "pair": "USDT-USD",
-            "amount": 100.0,
-            "incoming_account": "acct-1",
-            "outgoing_account": "acct-2",
-        },
-        headers={"X-Api-Ts": "12345"},
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert "id" in data
-    assert data["status"] == "NEW"
-    assert data["incoming_account"] == "acct-1"
+# Base URL for all providers from settings (default "http://0.0.0.0:8001")
+MOCK_PROVIDER_URL = "http://0.0.0.0:8001"
 
 
-def test_create_and_get_order(client, clear_idempotency_set, mock_asyncio_sleep):
-    # 1. Create order
+def setup_respx_quotes(respx_mock, amount_in="100.0", amount_out="100.0"):
+    provider_names = ["provider_a", "provider_b", "provider_c"]
+    for provider in provider_names:
+        # Quote route
+        respx_mock.get(f"{MOCK_PROVIDER_URL}/{provider}/quote").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "direction": "on-ramp",
+                    "pair": "USDT-USD",
+                    "amount_in": amount_in,
+                    "amount_out": amount_out,
+                    "fee_rate": "0.02",
+                    "valid_until": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
+                },
+            )
+        )
+
+
+def setup_respx_executes(respx_mock, status="success", provider_ref="ref-123"):
+    provider_names = ["provider_a", "provider_b", "provider_c"]
+    for provider in provider_names:
+        # Execute route
+        respx_mock.post(f"{MOCK_PROVIDER_URL}/{provider}/execute").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "status": status,
+                    "provider_ref": f"{provider_ref}-{provider}",
+                },
+            )
+        )
+
+
+@respx.mock
+def test_create_order_success_flow(client, clear_idempotency_set, mock_asyncio_sleep):
     payload = {
         "direction": "on-ramp",
         "pair": "USDT-USD",
@@ -30,17 +53,54 @@ def test_create_and_get_order(client, clear_idempotency_set, mock_asyncio_sleep)
         "outgoing_account": "acct-2",
     }
     headers = {"X-Api-Ts": "12345"}
+
+    setup_respx_quotes(respx.mock)
+    setup_respx_executes(respx.mock, status="success")
+
+    # 1. Create order
     create_resp = client.post("/orders", json=payload, headers=headers)
     assert create_resp.status_code == 200
-    order_id = create_resp.json()["id"]
+    data = create_resp.json()
+    assert "id" in data
+    assert data["status"] == "NEW"
+    order_id = data["id"]
 
-    # 2. Get order
+    # 2. Get order to verify it reached COMPLETED
     get_resp = client.get(f"/orders/{order_id}")
     assert get_resp.status_code == 200
-    data = get_resp.json()
-    assert data["id"] == order_id
-    assert data["incoming_account"] == "acct-1"
-    assert data["pair"] == "USDT-USD"
+    get_data = get_resp.json()
+    assert get_data["id"] == order_id
+    assert get_data["status"] == "COMPLETED"
+
+
+@respx.mock
+def test_create_order_failure_flow(client, clear_idempotency_set, mock_asyncio_sleep):
+    payload = {
+        "direction": "on-ramp",
+        "pair": "USDT-USD",
+        "amount": 100.0,
+        "incoming_account": "acct-1",
+        "outgoing_account": "acct-2",
+    }
+    headers = {"X-Api-Ts": "12346"}
+
+    setup_respx_quotes(respx.mock)
+    setup_respx_executes(respx.mock, status="decline")
+
+    # 1. Create order
+    create_resp = client.post("/orders", json=payload, headers=headers)
+    assert create_resp.status_code == 200
+    data = create_resp.json()
+    assert "id" in data
+    assert data["status"] == "NEW"
+    order_id = data["id"]
+
+    # 2. Get order to verify it reached FAILED
+    get_resp = client.get(f"/orders/{order_id}")
+    assert get_resp.status_code == 200
+    get_data = get_resp.json()
+    assert get_data["id"] == order_id
+    assert get_data["status"] == "FAILED"
 
 
 def test_get_order_not_found(client):
@@ -64,6 +124,7 @@ def test_create_order_without_x_api_ts(client, clear_idempotency_set):
     assert "Idempotency check failed" in response.json()["detail"]
 
 
+@respx.mock
 def test_create_order_idempotency_success_and_duplicate(client, clear_idempotency_set, mock_asyncio_sleep):
     payload = {
         "direction": "on-ramp",
@@ -74,6 +135,9 @@ def test_create_order_idempotency_success_and_duplicate(client, clear_idempotenc
     }
     ts = str(int(time.time()))
     headers = {"X-Api-Ts": ts}
+
+    setup_respx_quotes(respx.mock)
+    setup_respx_executes(respx.mock, status="success")
 
     # First request
     response1 = client.post("/orders", json=payload, headers=headers)
@@ -101,16 +165,22 @@ def test_create_order_validation_fail(client, clear_idempotency_set, mock_asynci
     assert response.json()["detail"] == "Not allowed, amount over the limit"
 
 
+@respx.mock
 def test_create_order_validation_success(client, clear_idempotency_set, mock_asyncio_sleep):
+    payload = {
+        "direction": "on-ramp",
+        "pair": "USDT-USD",
+        "amount": 1000.0,
+        "incoming_account": "acct-1",
+        "outgoing_account": "acct-2",
+    }
+
+    setup_respx_quotes(respx.mock)
+    setup_respx_executes(respx.mock, status="success")
+
     response = client.post(
         "/orders",
-        json={
-            "direction": "on-ramp",
-            "pair": "USDT-USD",
-            "amount": 1000.0,
-            "incoming_account": "acct-1",
-            "outgoing_account": "acct-2",
-        },
+        json=payload,
         headers={"X-Api-Ts": "12345"},
     )
     assert response.status_code == 200
