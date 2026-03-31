@@ -53,6 +53,18 @@ tasks:
     desc: Run all tests in the monorepo
     deps: [ test:lib, test:orchestrator, test:mock ]
 
+  migration:upgrade:orchestrator:
+    desc: To apply all migrations to the database (Liquidity Orchestrator)
+    dir: apps/liquidity_orchestrator
+    cmds:
+      - uv run alembic upgrade head
+
+  migration:create:orchestrator:
+    desc: Create a new migration (Liquidity Orchestrator). Usage - task migration:create:orchestrator M="my migration message"
+    dir: apps/liquidity_orchestrator
+    cmds:
+      - uv run alembic revision --autogenerate -m "{{.M}}"
+
   run:orchestrator:
     desc: Run main application (Liquidity Orchestrator)
     dir: apps/liquidity_orchestrator
