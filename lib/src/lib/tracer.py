@@ -20,6 +20,18 @@ def instrument_fastapi(app) -> None:
         logging.warning("FastAPIInstrumentor not found. Did you install lib[fastapi]?")
 
 
+def instrument_httpx() -> None:
+    """Instrument HTTPX. Requires the 'http_client' extra."""
+    try:
+        from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+
+        HTTPXClientInstrumentor().instrument()
+    except ImportError:
+        import logging
+
+        logging.warning("HTTPXClientInstrumentor not found. Did you install lib[http_client]?")
+
+
 def instrument_db() -> None:
     """Instrument SQLAlchemy. Requires the 'db' extra."""
     try:

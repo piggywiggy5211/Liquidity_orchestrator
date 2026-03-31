@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from lib.logger.logger import setup_logger
 from lib.middleware.logger_context import LoggerContextMiddleware
 from lib.middleware.logging_request_response import RequestResponseLoggingMiddleware
-from lib.tracer import init_base_tracer, instrument_db, instrument_fastapi
+from lib.tracer import init_base_tracer, instrument_db, instrument_fastapi, instrument_httpx
 
 from liquidity_orchestrator.core.bootstrap_di.container import bootstrap_container
 from liquidity_orchestrator.core.config import settings
@@ -43,6 +43,7 @@ def create_app(container: AsyncContainer | None = None) -> FastAPI:
 
     init_base_tracer()
     instrument_fastapi(app)
+    instrument_httpx()
     instrument_db()
 
     # DI Setup
