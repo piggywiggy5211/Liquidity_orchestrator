@@ -22,7 +22,7 @@ async def test_context_session_isolation(db_session, session_factory):
     Test that uow.switch_session_context_for_task provides a new session and restores the original one.
     """
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, PROVIDERS_MAP, InMemoryMetricsCollector())
+    service = LiquidityService(uow, PROVIDERS_MAP, InMemoryMetricsCollector(), Decimal("0.02"))
 
     main_session_id = id(uow._session)
 
@@ -44,7 +44,7 @@ async def test_parallel_context_sessions(db_session, session_factory):
     Test that multiple tasks running in parallel have their own unique sessions.
     """
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, PROVIDERS_MAP, InMemoryMetricsCollector())
+    service = LiquidityService(uow, PROVIDERS_MAP, InMemoryMetricsCollector(), Decimal("0.02"))
 
     async def delayed_session_id():
         s_id = id(uow._session)
@@ -69,7 +69,7 @@ async def test_nested_context_sessions(db_session, session_factory):
     Test that nested uow.switch_session_context_for_task (if ever used) would handle context correctly.
     """
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, PROVIDERS_MAP, InMemoryMetricsCollector())
+    service = LiquidityService(uow, PROVIDERS_MAP, InMemoryMetricsCollector(), Decimal("0.02"))
 
     main_session_id = id(uow._session)
 

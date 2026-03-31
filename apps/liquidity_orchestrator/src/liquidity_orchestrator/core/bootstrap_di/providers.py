@@ -56,11 +56,26 @@ class ServiceProvider(Provider):
 
     @provide(scope=Scope.APP)
     def get_providers_map(
-        self, httpx_client: httpx.AsyncClient, metrics_collector: IMetricsCollector
+        self,
+        httpx_client: httpx.AsyncClient,
+        metrics_collector: IMetricsCollector,
     ) -> Mapping[str, type[IProvider]]:
         for p in PROVIDERS_MAP.values():
             p.httpx_client = httpx_client
             p.metrics_collector = metrics_collector
         return PROVIDERS_MAP
 
-    service = provide(source=LiquidityService, scope=Scope.REQUEST)
+    @provide(scope=Scope.REQUEST)
+    def get_service(
+        self,
+        uow: IUnitOfWork,
+        providers_map: Mapping[str, type[IProvider]],
+        metrics_collector: IMetricsCollector,
+        settings: Settings,
+    ) -> LiquidityService:
+        return LiquidityService(
+            uow=uow,
+            providers_map=providers_map,
+            service_fee=settings.service_fee,
+            metrics=metrics_collector,
+        )

@@ -1,9 +1,9 @@
 import asyncio
+from decimal import Decimal
 from typing import Mapping
 
 from loguru import logger
 
-from liquidity_orchestrator.core.config import settings
 from liquidity_orchestrator.domain.enums import OrderStatus, ProviderExecutionStatus
 from liquidity_orchestrator.domain.enums import OutboxEventType as OET
 from liquidity_orchestrator.domain.interfaces import IMetricsCollector, IProvider, IUnitOfWork
@@ -21,10 +21,17 @@ from liquidity_orchestrator.service.dto import (
 
 
 class LiquidityService:
-    def __init__(self, uow: IUnitOfWork, providers_map: Mapping[str, type[IProvider]], metrics: IMetricsCollector):
+    def __init__(
+        self,
+        uow: IUnitOfWork,
+        providers_map: Mapping[str, type[IProvider]],
+        metrics: IMetricsCollector,
+        service_fee: Decimal,
+    ):
         self.uow = uow
         self.providers_map = providers_map
         self.metrics = metrics
+        self.service_fee = service_fee
 
     async def create_order(self, data: OrderCreateDTO) -> OrderDTO:
         order = Order.create(
@@ -33,7 +40,7 @@ class LiquidityService:
             pair=data.pair,
             incoming_account=data.incoming_account,
             outgoing_account=data.outgoing_account,
-            commission_rate=settings.service_fee,  # TODO fix
+            commission_rate=self.service_fee,
         )
         async with self.uow as u:
             u.orders.add(order)

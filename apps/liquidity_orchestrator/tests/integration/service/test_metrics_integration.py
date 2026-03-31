@@ -71,7 +71,7 @@ async def test_liquidity_service_metrics_integration_with_fakes(db_session, sess
         "FakeTimeout": FakeTimeoutProvider,
     }
 
-    service = LiquidityService(uow, fake_providers_map, metrics_collector)
+    service = LiquidityService(uow, fake_providers_map, metrics_collector, Decimal("0.02"))
 
     order_in = OrderCreateDTO(
         direction=QuoteDirection.ON_RAMP,
