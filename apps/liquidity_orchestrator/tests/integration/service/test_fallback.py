@@ -15,7 +15,7 @@ from liquidity_orchestrator.service.liquidity_service import LiquidityService
 @pytest.mark.asyncio
 async def test_fallback_best_fails_next_succeeds(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    service = LiquidityService(uow, PROVIDERS_MAP, InMemoryMetricsCollector(), Decimal("0.02"))
+    service = LiquidityService(uow, PROVIDERS_MAP, InMemoryMetricsCollector(stats_window_seconds=60), Decimal("0.02"))
 
     # 1. Create order
     order_in = OrderCreateDTO(

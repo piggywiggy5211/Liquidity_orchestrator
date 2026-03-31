@@ -27,4 +27,4 @@ This file contains instructions and standards for working on the **Liquidity Orc
 - `task mypy` — run type checking.
 - `task check` — run all checks (tests, linters, type hints).
 - `task run:orchestrator` — run main application.
-- `task run:mock` — run mock providers application.
+- `task run:mock` — run mock providers' application.

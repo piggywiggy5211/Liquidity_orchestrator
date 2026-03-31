@@ -40,6 +40,7 @@ def with_metrics(func: Callable) -> Callable:
 class BaseProvider(IProvider, ABC):
     httpx_client: httpx.AsyncClient
     metrics_collector: "IMetricsCollector"
+    mock_provider_url: str
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)

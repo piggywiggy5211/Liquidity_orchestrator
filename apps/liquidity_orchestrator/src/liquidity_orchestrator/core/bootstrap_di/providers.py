@@ -51,18 +51,20 @@ class ServiceProvider(Provider):
         return UnitOfWorkSqlAlchemy(session_factory, session)
 
     @provide(scope=Scope.APP)
-    def get_metrics_collector(self) -> IMetricsCollector:
-        return InMemoryMetricsCollector()
+    def get_metrics_collector(self, settings: Settings) -> IMetricsCollector:
+        return InMemoryMetricsCollector(stats_window_seconds=settings.stats_window_seconds)
 
     @provide(scope=Scope.APP)
     def get_providers_map(
         self,
         httpx_client: httpx.AsyncClient,
         metrics_collector: IMetricsCollector,
+        settings: Settings,
     ) -> Mapping[str, type[IProvider]]:
         for p in PROVIDERS_MAP.values():
             p.httpx_client = httpx_client
             p.metrics_collector = metrics_collector
+            p.mock_provider_url = settings.mock_provider_url
         return PROVIDERS_MAP
 
     @provide(scope=Scope.REQUEST)

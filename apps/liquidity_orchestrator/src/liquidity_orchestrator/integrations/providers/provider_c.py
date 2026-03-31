@@ -1,4 +1,3 @@
-from liquidity_orchestrator.core.config import settings  # TODO fix
 from liquidity_orchestrator.domain.provider_dto import (
     ProviderExecutionResponse,
     ProviderGetQuoteRequest,
@@ -19,13 +18,13 @@ class ProviderC(BaseProvider):
             "amount_out": str(request.amount_out),
         }
 
-        response = await self.httpx_client.get(f"{settings.mock_provider_url}/provider_c/quote", params=params)
+        response = await self.httpx_client.get(f"{self.mock_provider_url}/provider_c/quote", params=params)
         response.raise_for_status()
         return ProviderQuoteResponse.model_validate(response.json())
 
     async def execute(self, order: ProviderOrderExecutionRequest) -> ProviderExecutionResponse:
         request_coro = self.httpx_client.post(
-            f"{settings.mock_provider_url}/provider_c/execute",
+            f"{self.mock_provider_url}/provider_c/execute",
             json={
                 "direction": order.direction,
                 "pair": order.pair,

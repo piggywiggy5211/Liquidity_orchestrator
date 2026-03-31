@@ -58,7 +58,7 @@ class FakeTimeoutProvider(BaseProvider):
 @pytest.mark.asyncio
 async def test_liquidity_service_metrics_integration_with_fakes(db_session, session_factory):
     uow = UnitOfWorkSqlAlchemy(session_factory, db_session)
-    metrics_collector = InMemoryMetricsCollector()
+    metrics_collector = InMemoryMetricsCollector(stats_window_seconds=60)
 
     FakeSuccessProvider.metrics_collector = metrics_collector
     FakeSuccessProvider.httpx_client = None  # Not used in fake

@@ -20,7 +20,7 @@ class Settings(FastAPISettings):
     max_order_amount: Decimal = Decimal("1000")
     quote_ttl: int = 60
     stats_window_seconds: int = 60
-    mock_provider_url: str = "http://localhost:8001"
+    mock_provider_url: str = "http://0.0.0.0:8001"
 
 
 settings = Settings()

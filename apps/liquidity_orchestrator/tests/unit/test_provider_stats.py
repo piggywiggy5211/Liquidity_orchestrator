@@ -7,7 +7,7 @@ from liquidity_orchestrator.domain.metrics import InMemoryMetricsCollector
 
 @pytest.fixture
 def collector():
-    return InMemoryMetricsCollector()
+    return InMemoryMetricsCollector(stats_window_seconds=60)
 
 
 def test_metrics_collector_logic(collector):

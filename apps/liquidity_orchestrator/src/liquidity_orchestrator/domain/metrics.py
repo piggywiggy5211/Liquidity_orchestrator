@@ -2,14 +2,14 @@ import time
 from bisect import bisect_left
 from collections import defaultdict
 
-from liquidity_orchestrator.core.config import settings  # TODO hhhh
 from liquidity_orchestrator.domain.enums import ProviderExecutionStatus
 from liquidity_orchestrator.domain.interfaces import IMetricsCollector
 
 
 class InMemoryMetricsCollector(IMetricsCollector):
-    def __init__(self) -> None:
+    def __init__(self, stats_window_seconds: int) -> None:
         self._stats: dict[str, dict[str, list]] = defaultdict(lambda: {"latency": [], "availability": []})
+        self._stats_window_seconds = stats_window_seconds
 
     def record_execution(self, provider_name: str, latency: float, status: ProviderExecutionStatus | None) -> None:
         now = time.time()
@@ -20,7 +20,7 @@ class InMemoryMetricsCollector(IMetricsCollector):
 
     def _cleanup(self) -> None:
         now = time.time()
-        cutoff = now - settings.stats_window_seconds
+        cutoff = now - self._stats_window_seconds
         for p_name in self._stats:
             for set_name in self._stats[p_name]:
                 records = self._stats[p_name][set_name]
